@@ -1,0 +1,22 @@
+@{
+    # Required only when using local GPT-SoVITS custom TTS.
+    # Example: C:\GPT-SoVITS
+    GsvRoot = ''
+
+    # Keep 0.0.0.0 so the AstrBot Docker container can reach host.docker.internal.
+    GsvBindAddress = '0.0.0.0'
+    GsvPort = 9880
+
+    # Startup waits; raise them on a slower computer.
+    DockerReadyTimeoutSeconds = 240
+    GsvReadyTimeoutSeconds = 180
+
+    # Give VPN, GPU driver and Docker Desktop time to start after login.
+    DefaultStartupDelaySeconds = 45
+
+    # Optional: only used by Status with -CheckVpnEgress. Leave blank unless wanted.
+    ExpectedVpnPublicIp = ''
+
+    # Optional explicit path to Docker Desktop.exe. Leave blank for automatic detection.
+    DockerDesktopPath = ''
+}

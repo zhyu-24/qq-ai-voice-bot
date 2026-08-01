@@ -1,0 +1,9 @@
+{
+  "provider_tts_settings": {
+    "enable": true,
+    "provider_id": "REPLACE_WITH_YOUR_TTS_PROVIDER_ID",
+    "dual_output": true,
+    "use_file_service": false,
+    "trigger_probability": 1.0
+  }
+}

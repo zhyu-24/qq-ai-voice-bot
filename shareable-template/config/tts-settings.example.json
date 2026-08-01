@@ -1,0 +1,6 @@
+{
+  "enable": true,
+  "dual_output": true,
+  "trigger_probability": 1,
+  "provider_id": "your-tts-provider-id"
+}

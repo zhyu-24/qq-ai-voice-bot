@@ -1,0 +1,37 @@
+# AstrBot runtime data and credentials
+/data/
+/.env
+/.env.*
+!/.env.example
+
+# This computer's local runtime choices
+/config/local-runtime.psd1
+/logs/
+/state/
+/release/
+
+# Private assets and locally trained voice material
+/persona/aemeath.md
+/ams_voice.m4a
+/tts-test.mp3
+/models/
+/reference-audio/
+/outputs/
+*.m4a
+*.mp3
+*.wav
+*.flac
+*.ogg
+*.aac
+*.ckpt
+*.pth
+*.safetensors
+*.onnx
+*.index
+
+# Local tooling and editor state
+/.tools/
+.idea/
+.vscode/
+__pycache__/
+/backups/

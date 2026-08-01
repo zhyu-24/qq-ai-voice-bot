@@ -1,0 +1,15 @@
+services:
+  astrbot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: qq-ai-voice-bot:local
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "127.0.0.1:6185:6185"
+    environment:
+      TZ: Asia/Shanghai
+    volumes:
+      - ./data:/AstrBot/data

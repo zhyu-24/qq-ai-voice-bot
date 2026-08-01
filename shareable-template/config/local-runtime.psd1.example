@@ -1,0 +1,16 @@
+@{
+    # Optional local GPT-SoVITS directory. Leave blank for text-only/cloud-TTS setup.
+    GsvRoot = ''
+
+    # 0.0.0.0 is needed only when AstrBot runs in Docker and calls GPT-SoVITS on this computer.
+    GsvBindAddress = '0.0.0.0'
+    GsvPort = 9880
+
+    DockerReadyTimeoutSeconds = 240
+    GsvReadyTimeoutSeconds = 180
+    DefaultStartupDelaySeconds = 45
+
+    # Optional; used only by Status with -CheckVpnEgress.
+    ExpectedVpnPublicIp = ''
+    DockerDesktopPath = ''
+}
