@@ -240,10 +240,12 @@ $xaml = @'
                                 <StackPanel>
                                     <TextBlock Text="按这个顺序配置" FontSize="17" FontWeight="SemiBold" />
                                     <TextBlock Text="1. AstrBot → 模型提供商，新增与你的服务兼容的提供商（常见为 OpenAI API 兼容）。\n2. 输入服务 Base URL、你的 API Key、模型名称；保存后把它选为默认对话模型。\n3. 在聊天页发送一句“只回复：连接成功。”确认没有报错。\n4. 再到 人格 / Persona 页面导入自己的中性或原创人设提示词。" TextWrapping="Wrap" LineHeight="25" Margin="0,7,0,8" />
+                                    <TextBlock Text="新手选择：默认优先选文本对话 / Chat / Instruct 模型；Thinking、R1 一类只作为复杂问题备用。Embedding、图像、视频、ASR、TTS、Rerank 不能当默认对话模型。" TextWrapping="Wrap" Foreground="#4A5F78" Margin="0,0,0,8" />
                                     <WrapPanel>
                                         <Button x:Name="BtnOpenProviders" Style="{StaticResource PrimaryButton}" Content="打开 AstrBot · 模型提供商" />
                                         <Button x:Name="BtnOpenChat" Content="打开 AstrBot · 测试聊天" />
                                         <Button x:Name="BtnOpenPersona" Content="打开 AstrBot · 人格" />
+                                        <Button x:Name="BtnOpenModelGuide" Content="打开模型 / API 新手指南" />
                                     </WrapPanel>
                                 </StackPanel>
                             </Border>
@@ -450,6 +452,20 @@ function Open-SetupUrl {
     }
 }
 
+function Open-SetupFile {
+    param([Parameter(Mandatory = $true)][string]$Path)
+
+    try {
+        if (-not (Test-Path -LiteralPath $Path)) {
+            throw "文件不存在：$Path"
+        }
+        Start-Process -FilePath $Path
+        Add-SetupLog "已打开本地说明：$Path"
+    }
+    catch {
+        [System.Windows.MessageBox]::Show("无法打开本地说明：$Path`r`n$($_.Exception.Message)", '无法打开说明', 'OK', 'Error') | Out-Null
+    }
+}
 $script:TaskWorker = New-Object System.ComponentModel.BackgroundWorker
 $script:TaskWorker.add_DoWork({
     param($sender, $eventArgs)
@@ -621,6 +637,7 @@ $window.FindName('BtnOpenDashboardFromStart').Add_Click({ Open-SetupUrl 'http://
 $window.FindName('BtnOpenDashboard').Add_Click({ Open-SetupUrl 'http://localhost:6185' })
 $window.FindName('BtnOpenAstrBotPlatforms').Add_Click({ Open-SetupUrl 'http://localhost:6185/#/platforms' })
 $window.FindName('BtnOpenProviders').Add_Click({ Open-SetupUrl 'http://localhost:6185/#/providers' })
+$window.FindName('BtnOpenModelGuide').Add_Click({ Open-SetupFile (Join-Path $projectRoot 'docs\MODEL_AND_API_GUIDE.md') })
 $window.FindName('BtnOpenChat').Add_Click({ Open-SetupUrl 'http://localhost:6185/#/chat' })
 $window.FindName('BtnOpenPersona').Add_Click({ Open-SetupUrl 'http://localhost:6185/#/persona' })
 $window.FindName('BtnOpenQqPlatform').Add_Click({ Open-SetupUrl 'https://q.qq.com/qqbot/#/apps' })

@@ -12,7 +12,7 @@
 - “启动与常驻”可以设置 Windows 登录后自动启动；
 - 浏览器的 AstrBot 页面无需保持打开。
 
-详细图形化流程见 [docs/SETUP_CENTER.md](docs/SETUP_CENTER.md)。人格包格式与导入边界见 [docs/PERSONA_PACK.md](docs/PERSONA_PACK.md)。
+详细图形化流程见 [docs/SETUP_CENTER.md](docs/SETUP_CENTER.md)。人格包格式与导入边界见 [docs/PERSONA_PACK.md](docs/PERSONA_PACK.md)。第一次接触模型服务时，请先阅读 [模型选择与 API 获取指南](docs/MODEL_AND_API_GUIDE.md)。
 
 ## 项目本地配置与分享
 

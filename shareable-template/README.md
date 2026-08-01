@@ -13,12 +13,14 @@
 1. 安装 Docker Desktop，并启动 AstrBot；
 2. 在 QQ 开放平台创建机器人、选择 WebSocket、配置 IP 白名单；
 3. 在 AstrBot 中填写自己的 QQ AppID 与 AppSecret；
-4. 在 AstrBot 中配置自己的大模型服务和 API Key；
+4. 按 [模型选择与 API 获取指南](docs/MODEL_AND_API_GUIDE.md) 在 AstrBot 中配置自己的大模型服务和 API Key；
 5. 可选：导入纯文本人格包，复制提示词并在 AstrBot 官方人格页保存；
 6. 可选：安装 GPT-SoVITS、选择本机目录、导入有权使用的语音包 ZIP；
 7. 启动、停止、状态检查与登录后自动启动。
 
-整个过程不需要手动输入 PowerShell 命令。详细说明在 [docs/SETUP_CENTER.md](docs/SETUP_CENTER.md)；人格包说明在 [docs/PERSONA_PACK.md](docs/PERSONA_PACK.md)。
+整个过程不需要手动输入 PowerShell 命令。详细说明在 [docs/SETUP_CENTER.md](docs/SETUP_CENTER.md)；零基础模型/API 指南在 [docs/MODEL_AND_API_GUIDE.md](docs/MODEL_AND_API_GUIDE.md)；人格包说明在 [docs/PERSONA_PACK.md](docs/PERSONA_PACK.md)。
+
+初次使用时请选择服务商列表中的**文本对话模型**；不要误选 Embedding、图像/视频生成、ASR、TTS 或 Rerank 模型。
 
 ## 有梯子 / 大陆下载路线
 
