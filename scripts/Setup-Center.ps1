@@ -107,7 +107,7 @@ $xaml = @'
                     <TextBlock Text="所有本机动作都在这里完成；密钥仍只在 QQ 开放平台与 AstrBot 的官方界面中填写。" Foreground="#C5D9F5" FontSize="13" Margin="0,4,0,0" />
                 </StackPanel>
                 <Border Grid.Column="1" Background="#1D3B65" CornerRadius="6" Padding="12,8" VerticalAlignment="Center">
-                    <TextBlock Text="建议顺序：Docker → QQ → 大模型 → 语音包 → 常驻" Foreground="#EAF3FF" TextWrapping="Wrap" />
+                    <TextBlock Text="建议顺序：Docker → QQ → 大模型 → 人格包 → 语音包 → 常驻" Foreground="#EAF3FF" TextWrapping="Wrap" />
                 </Border>
             </Grid>
         </Border>
@@ -298,7 +298,42 @@ $xaml = @'
                     </ScrollViewer>
                 </TabItem>
 
-                <TabItem Header="5  启动与常驻">
+                <TabItem Header="5  人格包">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="8">
+                            <TextBlock Text="导入文本人格包（可选）" FontSize="22" FontWeight="SemiBold" Foreground="#17365D" />
+                            <TextBlock Text="人格包只包含系统提示词与校验元数据。它不包含 QQ 凭据、模型 API Key、聊天记录、语音权重、音频或图片；导入时也不会执行 ZIP 内的任何脚本。" TextWrapping="Wrap" Margin="0,9,0,14" FontSize="14" />
+                            <Border Style="{StaticResource Card}">
+                                <StackPanel>
+                                    <TextBlock Text="A. 选择人格包 ZIP" FontSize="17" FontWeight="SemiBold" />
+                                    <TextBlock Text="向导会先验证 ZIP 的清单、文件白名单与系统提示词 SHA-256；验证通过后，会把提示词复制到剪贴板并打开 AstrBot 的官方人格页面。" TextWrapping="Wrap" Margin="0,7,0,6" />
+                                    <DockPanel LastChildFill="True"><Button x:Name="BtnBrowsePersonaPack" Content="选择人格包 ZIP..." DockPanel.Dock="Right" /><Button x:Name="BtnPreparePersonaPack" Style="{StaticResource PrimaryButton}" Content="安全准备并打开人格页" DockPanel.Dock="Right" /><TextBox x:Name="TxtPersonaPack" IsReadOnly="True" Padding="8" VerticalContentAlignment="Center" Margin="0,6,10,6" /></DockPanel>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource Card}">
+                                <StackPanel>
+                                    <TextBlock Text="B. 在 AstrBot 保存人格" FontSize="17" FontWeight="SemiBold" />
+                                    <TextBlock Text="打开页面后，新建人格；使用日志中显示的 Persona ID，粘贴已经复制的完整系统提示词并保存。这里保留官方 UI 作为唯一的人格数据库写入入口，因此不会要求或保存你的管理登录令牌。" TextWrapping="Wrap" Margin="0,7,0,8" />
+                                    <Button x:Name="BtnOpenPersonaFromPack" Content="打开 AstrBot · 人格" HorizontalAlignment="Left" />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource Card}">
+                                <StackPanel>
+                                    <TextBlock Text="C. 设为默认人格" FontSize="17" FontWeight="SemiBold" />
+                                    <TextBlock Text="确认刚才的人格已保存后再点此按钮。它只会备份并更新本机 AstrBot 配置中的默认人格 ID，不会改动人格数据库、QQ 配置或模型设置。随后执行一次日常启动，新的会话才会使用它。" TextWrapping="Wrap" Margin="0,7,0,8" />
+                                    <Button x:Name="BtnSetDefaultPersona" Style="{StaticResource PrimaryButton}" Content="设为默认人格（已保存后）" HorizontalAlignment="Left" />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource Card}">
+                                <StackPanel>
+                                    <TextBlock Text="为什么不是一键写入数据库？" FontSize="17" FontWeight="SemiBold" />
+                                    <TextBlock Text="AstrBot 的人格记录会随版本升级变化。通过官方人格页面保存，能避免导入器直接改数据库产生兼容或覆盖风险；已有聊天也可能保留自己原先的人格，新建会话再测试即可。" TextWrapping="Wrap" Margin="0,7,0,0" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+                <TabItem Header="6  启动与常驻">
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <StackPanel Margin="8">
                             <TextBlock Text="日常使用与登录后自动启动" FontSize="22" FontWeight="SemiBold" Foreground="#17365D" />
@@ -327,11 +362,11 @@ $xaml = @'
                     </ScrollViewer>
                 </TabItem>
 
-                <TabItem Header="6  分享项目">
+                <TabItem Header="7  分享项目">
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <StackPanel Margin="8">
                             <TextBlock Text="安全地分享给其他人" FontSize="22" FontWeight="SemiBold" Foreground="#17365D" />
-                            <TextBlock Text="推荐发两个独立 ZIP：基础环境包 + 可选已授权语音包。下载者安装基础包后，用本向导选择并导入语音包，不需要重新训练。" TextWrapping="Wrap" Margin="0,9,0,14" FontSize="14" />
+                            <TextBlock Text="推荐发三个互不混放的包：基础环境包 + 可选文本人格包 + 可选已授权语音包。下载者先安装基础包，再按需导入人格和语音，不需要重新训练。" TextWrapping="Wrap" Margin="0,9,0,14" FontSize="14" />
                             <Border Style="{StaticResource Card}">
                                 <StackPanel>
                                     <TextBlock Text="基础环境包" FontSize="17" FontWeight="SemiBold" />
@@ -348,8 +383,15 @@ $xaml = @'
                             </Border>
                             <Border Style="{StaticResource Card}">
                                 <StackPanel>
+                                    <TextBlock Text="可选人格包" FontSize="17" FontWeight="SemiBold" />
+                                    <TextBlock Text="人格包只包含可分享的文本提示词和校验信息；不含 QQ 凭据、模型 Key、聊天记录、媒体、模型权重或训练素材。下载者会在官方 AstrBot 人格页保存它，再由向导设置为默认人格。" TextWrapping="Wrap" Margin="0,7,0,8" />
+                                    <WrapPanel><Button x:Name="BtnCheckPersonaPack" Style="{StaticResource PrimaryButton}" Content="检查人格包是否安全" /><Button x:Name="BtnExportPersonaPack" Content="导出人格包 ZIP" /></WrapPanel>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource Card}">
+                                <StackPanel>
                                     <TextBlock Text="给下载者的一句话说明" FontSize="17" FontWeight="SemiBold" />
-                                    <TextBlock Text="“先解压基础包，双击 Setup-Center.cmd，按页签完成 Docker、QQ、模型与语音包配置。所有账号、密钥与白名单都由你自己创建，不要把它们发给我。”" TextWrapping="Wrap" Margin="0,7,0,8" />
+                                    <TextBlock Text="“先解压基础包，双击 Setup-Center.cmd，按页签完成 Docker、QQ、模型配置；需要时再导入文本人格包和语音包。所有账号、密钥与白名单都由你自己创建，不要把它们发给我。”" TextWrapping="Wrap" Margin="0,7,0,8" />
                                     <Button x:Name="BtnCopyDownloadInstructions" Content="复制这段说明" HorizontalAlignment="Left" />
                                 </StackPanel>
                             </Border>
@@ -378,6 +420,7 @@ $script:TaskState = $window.FindName('TxtTaskState')
 $script:TaskProgress = $window.FindName('TaskProgress')
 $script:GsvRootTextBox = $window.FindName('TxtGsvRoot')
 $script:VoicePackTextBox = $window.FindName('TxtVoicePack')
+$script:PersonaPackTextBox = $window.FindName('TxtPersonaPack')
 $script:GsvRootTextBox.Text = Get-CurrentGsvRoot
 
 function Add-SetupLog {
@@ -531,6 +574,14 @@ function Select-VoicePack {
     }
 }
 
+function Select-PersonaPack {
+    $dialog = New-Object Microsoft.Win32.OpenFileDialog
+    $dialog.Filter = 'Persona-pack ZIP (*.zip)|*.zip|All files (*.*)|*.*'
+    $dialog.Title = '选择人格包 ZIP'
+    if ($dialog.ShowDialog()) {
+        $script:PersonaPackTextBox.Text = $dialog.FileName
+    }
+}
 function Copy-SetupText {
     param([Parameter(Mandatory = $true)][string]$Text)
     [System.Windows.Clipboard]::SetText($Text)
@@ -605,6 +656,26 @@ $window.FindName('BtnImportVoicePack').Add_Click({
     }
     Invoke-SetupScript -Title '导入本地语音包' -FilePath (Join-Path $scriptsRoot 'Import-VoicePackZip.ps1') -Arguments @('-VoicePackZip', $script:VoicePackTextBox.Text)
 })
+$window.FindName('BtnBrowsePersonaPack').Add_Click({ Select-PersonaPack })
+$window.FindName('BtnPreparePersonaPack').Add_Click({
+    if ([string]::IsNullOrWhiteSpace($script:PersonaPackTextBox.Text)) {
+        [System.Windows.MessageBox]::Show('请先选择一个 .zip 人格包。', '还没有选择人格包', 'OK', 'Information') | Out-Null
+        return
+    }
+    Invoke-SetupScript -Title '安全准备人格包' -FilePath (Join-Path $scriptsRoot 'Import-PersonaPackZip.ps1') -Arguments @('-PersonaPackZip', $script:PersonaPackTextBox.Text)
+})
+$window.FindName('BtnOpenPersonaFromPack').Add_Click({ Open-SetupUrl 'http://localhost:6185/#/persona' })
+$window.FindName('BtnSetDefaultPersona').Add_Click({
+    if ([string]::IsNullOrWhiteSpace($script:PersonaPackTextBox.Text)) {
+        [System.Windows.MessageBox]::Show('请先选择并保存对应的人格包。', '还没有选择人格包', 'OK', 'Information') | Out-Null
+        return
+    }
+    $confirmationText = '确认你已经在 AstrBot 的人格页面中使用该包显示的 Persona ID 保存了人格吗？' + [Environment]::NewLine + [Environment]::NewLine + '此操作只会备份并设置默认人格 ID。'
+    $confirmation = [System.Windows.MessageBox]::Show($confirmationText, '确认已保存人格', 'YesNo', 'Question')
+    if ($confirmation -eq [System.Windows.MessageBoxResult]::Yes) {
+        Invoke-SetupScript -Title '设为默认人格' -FilePath (Join-Path $scriptsRoot 'Import-PersonaPackZip.ps1') -Arguments @('-PersonaPackZip', $script:PersonaPackTextBox.Text, '-NoBrowser', '-NoClipboard', '-SetAsDefault')
+    }
+})
 $window.FindName('BtnInstallAutostart').Add_Click({ Invoke-SetupScript -Title '启用登录后自动启动' -FilePath (Join-Path $scriptsRoot 'Install-LocalBotAutostart.ps1') })
 $window.FindName('BtnUninstallAutostart').Add_Click({ Invoke-SetupScript -Title '取消登录后自动启动' -FilePath (Join-Path $scriptsRoot 'Uninstall-LocalBotAutostart.ps1') })
 $window.FindName('BtnCheckSharePackage').Add_Click({ Invoke-PublisherAction -Title '检查基础包安全性' -FilePath (Join-Path $scriptsRoot 'Test-ShareablePackage.ps1') -RequiredPath (Join-Path $projectRoot 'shareable-template') })
@@ -613,6 +684,13 @@ $window.FindName('BtnExportVoicePack').Add_Click({
     $confirmation = [System.Windows.MessageBox]::Show('仅当你拥有模型与参考音频的传播授权时，才可以导出语音包。是否继续？', '确认授权', 'YesNo', 'Warning')
     if ($confirmation -eq [System.Windows.MessageBoxResult]::Yes) {
         Invoke-PublisherAction -Title '导出已授权语音包' -FilePath (Join-Path $scriptsRoot 'New-VoicePack.ps1') -RequiredPath (Join-Path $projectRoot 'voice-pack-template')
+    }
+})
+$window.FindName('BtnCheckPersonaPack').Add_Click({ Invoke-PublisherAction -Title '检查人格包安全性' -FilePath (Join-Path $scriptsRoot 'Test-PersonaPackSource.ps1') -RequiredPath (Join-Path $projectRoot 'persona-pack-template') })
+$window.FindName('BtnExportPersonaPack').Add_Click({
+    $confirmation = [System.Windows.MessageBox]::Show('请确认人格包仅包含你可分享的文本设定，且不包含凭据、聊天记录、媒体或训练素材。是否继续？', '确认内容范围', 'YesNo', 'Warning')
+    if ($confirmation -eq [System.Windows.MessageBoxResult]::Yes) {
+        Invoke-PublisherAction -Title '导出人格包 ZIP' -FilePath (Join-Path $scriptsRoot 'New-PersonaPack.ps1') -RequiredPath (Join-Path $projectRoot 'persona-pack-template')
     }
 })
 $window.FindName('BtnOpenReleaseFolder').Add_Click({
@@ -624,7 +702,7 @@ $window.FindName('BtnCopyQqChecklist').Add_Click({
     Copy-SetupText "QQ 官方机器人检查清单`r`n1. 我的机器人：创建并设置头像、昵称、简介。`r`n2. 开发设置：事件订阅选择 WebSocket。`r`n3. 保存 AppID / AppSecret，只在 AstrBot 的 QQ 官方机器人适配器内填写。`r`n4. 服务器 IP 白名单：填当前 VPN 或网络的公网出口 IPv4。`r`n5. 开发体验号设置：添加自己的测试 QQ。`r`n6. AstrBot：机器人 → 创建 QQ 官方机器人适配器 → 保存 → 在 QQ 中 @机器人测试。"
 })
 $window.FindName('BtnCopyDownloadInstructions').Add_Click({
-    Copy-SetupText "先解压基础包，双击 Setup-Center.cmd，按页签完成 Docker、QQ、模型与语音包配置。所有账号、密钥与白名单都由你自己创建，不要把它们发给我。"
+    Copy-SetupText "先解压基础包，双击 Setup-Center.cmd，按页签完成 Docker、QQ、模型配置；需要时再导入文本人格包和语音包。所有账号、密钥与白名单都由你自己创建，不要把它们发给我。"
 })
 
 Add-SetupLog '欢迎使用可视化配置中心。建议从“开始”页执行一次本机状态检查。'

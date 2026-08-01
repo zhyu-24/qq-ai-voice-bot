@@ -1,7 +1,7 @@
 ﻿[CmdletBinding()]
 param(
     [string]$DestinationDirectory = (Join-Path (Split-Path -Parent $PSScriptRoot) 'release'),
-    [string]$PackageName = 'qq-ai-voice-bot-starter-v4'
+    [string]$PackageName = 'qq-ai-voice-bot-starter-v5'
 )
 
 Set-StrictMode -Version Latest

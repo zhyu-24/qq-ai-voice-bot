@@ -5,6 +5,7 @@ runtime
 logs
 state
 release
+persona-imports
 .tools
 models
 reference-audio

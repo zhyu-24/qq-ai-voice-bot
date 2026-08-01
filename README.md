@@ -8,15 +8,18 @@
 
 - “日常启动”会启动 Docker、AstrBot 与已配置的 GPT-SoVITS；
 - “检查本机状态”会检查语音、TTS、权重和 GPU；
+- “人格包”可安全导入纯文本系统提示词，并在官方 AstrBot 页面保存；
 - “启动与常驻”可以设置 Windows 登录后自动启动；
 - 浏览器的 AstrBot 页面无需保持打开。
 
-详细图形化流程见 [docs/SETUP_CENTER.md](docs/SETUP_CENTER.md)。
+详细图形化流程见 [docs/SETUP_CENTER.md](docs/SETUP_CENTER.md)。人格包格式与导入边界见 [docs/PERSONA_PACK.md](docs/PERSONA_PACK.md)。
 
-## 项目本地配置
+## 项目本地配置与分享
 
-下载 `release` 中导出的两个独立包：
+下载或发布时，请把内容分成彼此独立的包：
 
-- 基础环境包：图形化向导、Docker/AstrBot 启动脚本、文档；
-- 可选语音包（爱弥斯）：已经训练好的爱弥斯模型相关内容，可一键导入；
-- 已装载傻瓜式教学，将文件解压好之后，双击Setup-Center.cmd，即可跟随教程完成配置
+- 基础环境包：图形化向导、Docker/AstrBot 启动脚本、文档；解压后双击 `Setup-Center.cmd` 即可跟随傻瓜式教程完成配置。
+- 可选人格包：纯文本系统提示词与哈希校验，不带任何媒体或凭据。
+- 可选语音包：如发布者另行提供已训练的爱弥斯语音包，可在向导中一键导入；仅在拥有使用与传播授权时分享。
+
+基础包不包含 QQ 凭据、模型 API Key、个人数据、聊天记录、日志、模型权重、参考音频或你的本地人格文本。`release` 和 `persona-imports` 都是本机私有目录，不会被 Git 提交。

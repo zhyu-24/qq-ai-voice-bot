@@ -1,6 +1,6 @@
 ﻿# QQ AI Voice Bot Starter Kit
 
-这是一个 Windows 优先的 QQ 官方机器人基础包。它使用 AstrBot 处理群消息和大模型，可选连接本机 GPT-SoVITS 生成定制语音。
+这是一个 Windows 优先的 QQ 官方机器人基础包。它使用 AstrBot 处理群消息和大模型，可选连接本机 GPT-SoVITS 生成定制语音，也可安全导入独立的文本人格包。
 
 它不是预配置好的账号：每位使用者必须使用自己的 QQ 官方机器人、模型服务和本机运行环境。
 
@@ -14,10 +14,11 @@
 2. 在 QQ 开放平台创建机器人、选择 WebSocket、配置 IP 白名单；
 3. 在 AstrBot 中填写自己的 QQ AppID 与 AppSecret；
 4. 在 AstrBot 中配置自己的大模型服务和 API Key；
-5. 可选：安装 GPT-SoVITS、选择本机目录、导入有权使用的语音包 ZIP；
-6. 启动、停止、状态检查与登录后自动启动。
+5. 可选：导入纯文本人格包，复制提示词并在 AstrBot 官方人格页保存；
+6. 可选：安装 GPT-SoVITS、选择本机目录、导入有权使用的语音包 ZIP；
+7. 启动、停止、状态检查与登录后自动启动。
 
-整个过程不需要手动输入 PowerShell 命令。详细说明在 [docs/SETUP_CENTER.md](docs/SETUP_CENTER.md)。
+整个过程不需要手动输入 PowerShell 命令。详细说明在 [docs/SETUP_CENTER.md](docs/SETUP_CENTER.md)；人格包说明在 [docs/PERSONA_PACK.md](docs/PERSONA_PACK.md)。
 
 ## 有梯子 / 大陆下载路线
 
@@ -29,6 +30,7 @@
 
 - Docker Compose 版 AstrBot
 - 图形化配置中心与启动、停止、状态检查工具
+- 可选文本人格包的安全校验、剪贴板准备与官方 UI 导入指引
 - 可选本地 GPT-SoVITS 的路径检查和安全语音包导入器
 - 登录后自动启动脚本
 - 中性、原创人格示例
@@ -40,6 +42,7 @@
 - 模型 API Key、账单或服务账户
 - AstrBot 运行数据、聊天记录、数据库、日志或管理员账号
 - 任何语音录音、训练权重、参考音频、原作角色资料或账号头像
+- 任何私人或未获分享许可的人格提示词
 - VPN 客户端及 VPN 凭据
 
 ## VPN / 白名单要点
@@ -48,4 +51,4 @@ QQ 官方机器人在 WebSocket 模式下不需要把电脑端口暴露给公网
 
 ## 分享与授权
 
-基础包可以分享；请先运行 `Check-Package.cmd`。若另行分享语音包，发布者必须确认自己拥有模型与参考音频的使用和传播授权。语音包不应携带 QQ 凭据、模型 Key、聊天数据或人格素材。
+基础包可以分享；请先运行 `Check-Package.cmd`。人格包和语音包应当分开发送：人格包只能包含可分享的文本设定，语音包仅在发布者拥有模型与参考音频的使用和传播授权时分享。两个包都不应携带 QQ 凭据、模型 Key、聊天数据或任何用户私密信息。

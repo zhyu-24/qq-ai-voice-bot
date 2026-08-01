@@ -4,6 +4,7 @@
 /logs/
 /state/
 /release/
+/persona-imports/
 /.env
 /.env.*
 !/.env.example

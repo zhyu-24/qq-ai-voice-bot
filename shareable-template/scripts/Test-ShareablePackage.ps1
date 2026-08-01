@@ -8,7 +8,7 @@ $ErrorActionPreference = 'Stop'
 
 $packageRoot = (Resolve-Path -LiteralPath $PackagePath).Path
 $violations = New-Object System.Collections.Generic.List[string]
-$forbiddenDirectories = @('data', 'runtime', 'logs', 'state', 'release', '.tools', 'models', 'reference-audio', 'outputs')
+$forbiddenDirectories = @('data', 'runtime', 'logs', 'state', 'release', '.tools', 'models', 'reference-audio', 'outputs', 'persona-imports')
 $forbiddenExtensions = @('.m4a', '.mp3', '.wav', '.flac', '.ogg', '.aac', '.ckpt', '.pth', '.safetensors', '.onnx', '.index', '.exe')
 $textExtensions = @('.ps1', '.cmd', '.md', '.txt', '.json', '.yml', '.yaml', '.env', '.example', '.gitignore', '.dockerignore')
 $secretPatterns = @(

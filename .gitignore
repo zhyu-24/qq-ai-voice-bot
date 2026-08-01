@@ -9,6 +9,7 @@
 /logs/
 /state/
 /release/
+/persona-imports/
 
 # Private assets and locally trained voice material
 /persona/aemeath.md
