@@ -440,6 +440,66 @@ function Set-SetupBusy {
     $script:TaskState.Text = $Status
 }
 
+function Get-SetupErrorMessage {
+    param([AllowNull()][object]$ErrorObject)
+
+    if ($null -eq $ErrorObject) {
+        return '未知错误。'
+    }
+
+    $exceptionObject = $null
+    if ($ErrorObject -is [System.Management.Automation.ErrorRecord]) {
+        $exceptionObject = $ErrorObject.Exception
+    }
+    else {
+        $exceptionProperty = $ErrorObject.PSObject.Properties['Exception']
+        if ($null -ne $exceptionProperty) {
+            $exceptionObject = $exceptionProperty.Value
+        }
+    }
+
+    if ($null -ne $exceptionObject) {
+        $messageProperty = $exceptionObject.PSObject.Properties['Message']
+        if ($null -ne $messageProperty -and -not [string]::IsNullOrWhiteSpace([string]$messageProperty.Value)) {
+            return [string]$messageProperty.Value
+        }
+    }
+
+    $directMessageProperty = $ErrorObject.PSObject.Properties['Message']
+    if ($null -ne $directMessageProperty -and -not [string]::IsNullOrWhiteSpace([string]$directMessageProperty.Value)) {
+        return [string]$directMessageProperty.Value
+    }
+
+    $fallback = ([string]$ErrorObject).Trim()
+    if (-not [string]::IsNullOrWhiteSpace($fallback)) {
+        return $fallback
+    }
+    return '未知错误。'
+}
+
+function Show-SetupFailure {
+    param(
+        [Parameter(Mandatory = $true)][string]$Title,
+        [Parameter(Mandatory = $true)][string]$Summary,
+        [AllowNull()][object]$ErrorObject
+    )
+
+    $detail = Get-SetupErrorMessage -ErrorObject $ErrorObject
+    $message = "$Summary`r`n$detail"
+    try {
+        Add-SetupLog "[FAIL] $Summary $detail"
+    }
+    catch {
+        Write-Warning $message
+    }
+    try {
+        [System.Windows.MessageBox]::Show($message, $Title, 'OK', 'Error') | Out-Null
+    }
+    catch {
+        Write-Warning $message
+    }
+}
+
 function Open-SetupUrl {
     param([Parameter(Mandatory = $true)][string]$Url)
 
@@ -448,7 +508,7 @@ function Open-SetupUrl {
         Add-SetupLog "已在浏览器打开：$Url"
     }
     catch {
-        [System.Windows.MessageBox]::Show("无法打开链接：$Url`r`n$($_.Exception.Message)", '无法打开浏览器', 'OK', 'Error') | Out-Null
+        Show-SetupFailure -Title '无法打开浏览器' -Summary "无法打开链接：$Url" -ErrorObject $_
     }
 }
 
@@ -463,84 +523,84 @@ function Open-SetupFile {
         Add-SetupLog "已打开本地说明：$Path"
     }
     catch {
-        [System.Windows.MessageBox]::Show("无法打开本地说明：$Path`r`n$($_.Exception.Message)", '无法打开说明', 'OK', 'Error') | Out-Null
+        Show-SetupFailure -Title '无法打开说明' -Summary "无法打开本地说明：$Path" -ErrorObject $_
     }
 }
-$script:TaskWorker = New-Object System.ComponentModel.BackgroundWorker
-$script:TaskWorker.add_DoWork({
-    param($sender, $eventArgs)
 
-    $task = $eventArgs.Argument
-    try {
-        $parts = @('-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', $task.FilePath) + @($task.Arguments)
-        $quoteCharacter = [string][char]34
-        $argumentLine = (($parts | ForEach-Object {
-            $argumentValue = [string]$_
-            if ($argumentValue.Contains($quoteCharacter)) {
-                throw 'A selected path contains an unsupported quote character.'
-            }
-            $quoteCharacter + $argumentValue + $quoteCharacter
-        }) -join ' ')
-        $startInfo = New-Object System.Diagnostics.ProcessStartInfo
-        $startInfo.FileName = (Get-Command powershell.exe).Source
-        $startInfo.Arguments = $argumentLine
-        $startInfo.WorkingDirectory = $task.WorkingDirectory
-        $startInfo.UseShellExecute = $false
-        $startInfo.RedirectStandardOutput = $true
-        $startInfo.RedirectStandardError = $true
-        $startInfo.CreateNoWindow = $true
-
-        $process = New-Object System.Diagnostics.Process
-        $process.StartInfo = $startInfo
-        [void]$process.Start()
-        $standardOutput = $process.StandardOutput.ReadToEnd()
-        $standardError = $process.StandardError.ReadToEnd()
-        $process.WaitForExit()
-        $eventArgs.Result = [pscustomobject]@{
-            Title = $task.Title
-            ExitCode = $process.ExitCode
-            Output = $standardOutput
-            ErrorOutput = $standardError
-        }
-    }
-    catch {
-        $eventArgs.Result = [pscustomobject]@{
-            Title = $task.Title
-            ExitCode = -1
-            Output = ''
-            ErrorOutput = $_.Exception.Message
-        }
-    }
-})
-
-$script:TaskWorker.add_RunWorkerCompleted({
-    param($sender, $eventArgs)
+function Complete-SetupTask {
+    param(
+        [Parameter(Mandatory = $true)][string]$Title,
+        [Parameter(Mandatory = $true)][int]$ExitCode,
+        [AllowNull()][string]$Output,
+        [AllowNull()][string]$ErrorOutput
+    )
 
     Set-SetupBusy -Busy $false
-    if ($null -ne $eventArgs.Error) {
-        Add-SetupLog "[FAIL] 后台任务异常：$($eventArgs.Error.Exception.Message)"
-        $script:TaskState.Text = '执行失败，请查看日志。'
-        return
+    if (-not [string]::IsNullOrWhiteSpace([string]$Output)) {
+        Add-SetupLog $Output.TrimEnd()
     }
-    $result = $eventArgs.Result
-    if ($null -eq $result) {
-        Add-SetupLog '[FAIL] 后台任务没有返回结果。'
-        $script:TaskState.Text = '执行失败，请查看日志。'
-        return
+    if (-not [string]::IsNullOrWhiteSpace([string]$ErrorOutput)) {
+        Add-SetupLog "[stderr] $($ErrorOutput.TrimEnd())"
     }
-    if (-not [string]::IsNullOrWhiteSpace([string]$result.Output)) {
-        Add-SetupLog $result.Output.TrimEnd()
-    }
-    if (-not [string]::IsNullOrWhiteSpace([string]$result.ErrorOutput)) {
-        Add-SetupLog "[stderr] $($result.ErrorOutput.TrimEnd())"
-    }
-    if ([int]$result.ExitCode -eq 0) {
-        $script:TaskState.Text = "$($result.Title) 已完成。"
-        Add-SetupLog "[OK] $($result.Title) 已完成。"
+    if ($ExitCode -eq 0) {
+        $script:TaskState.Text = "$Title 已完成。"
+        Add-SetupLog "[OK] $Title 已完成。"
     }
     else {
-        $script:TaskState.Text = "$($result.Title) 失败（退出码 $($result.ExitCode)）。"
-        Add-SetupLog "[FAIL] $($result.Title) 失败（退出码 $($result.ExitCode)）。"
+        $script:TaskState.Text = "$Title 失败（退出码 $ExitCode）。"
+        Add-SetupLog "[FAIL] $Title 失败（退出码 $ExitCode）。"
+    }
+}
+
+$script:ActiveTask = $null
+$script:TaskTimer = New-Object System.Windows.Threading.DispatcherTimer
+$script:TaskTimer.Interval = [System.TimeSpan]::FromMilliseconds(200)
+$script:TaskTimer.Add_Tick({
+    param($sender, $eventArgs)
+
+    $task = $null
+    $disposeProcess = $false
+    try {
+        $task = $script:ActiveTask
+        if ($null -eq $task) {
+            $script:TaskTimer.Stop()
+            return
+        }
+        if (-not $task.Process.HasExited) {
+            return
+        }
+        if (-not $task.OutputTask.IsCompleted -or -not $task.ErrorTask.IsCompleted) {
+            return
+        }
+
+        $script:TaskTimer.Stop()
+        $output = [string]$task.OutputTask.GetAwaiter().GetResult()
+        $errorOutput = [string]$task.ErrorTask.GetAwaiter().GetResult()
+        $exitCode = [int]$task.Process.ExitCode
+        $script:ActiveTask = $null
+        $disposeProcess = $true
+        Complete-SetupTask -Title $task.Title -ExitCode $exitCode -Output $output -ErrorOutput $errorOutput
+    }
+    catch {
+        $script:TaskTimer.Stop()
+        $script:ActiveTask = $null
+        $disposeProcess = $true
+        try {
+            Set-SetupBusy -Busy $false -Status '执行失败，请查看日志。'
+        }
+        catch {
+            Write-Warning '无法恢复向导任务状态。'
+        }
+        Show-SetupFailure -Title '后台任务异常' -Summary '向导已捕获后台任务错误，窗口可以继续使用。' -ErrorObject $_
+    }
+    finally {
+        if ($disposeProcess -and $null -ne $task -and $task.Process.HasExited) {
+            try {
+                $task.Process.Dispose()
+            }
+            catch {
+            }
+        }
     }
 })
 
@@ -551,22 +611,69 @@ function Invoke-SetupScript {
         [string[]]$Arguments = @()
     )
 
-    if ($script:TaskWorker.IsBusy) {
-        [System.Windows.MessageBox]::Show('已有任务正在执行，请等待它完成。', '请稍候', 'OK', 'Information') | Out-Null
-        return
+    $process = $null
+    try {
+        if ($null -ne $script:ActiveTask) {
+            [System.Windows.MessageBox]::Show('已有任务正在执行，请等待它完成。', '请稍候', 'OK', 'Information') | Out-Null
+            return
+        }
+        if (-not (Test-Path -LiteralPath $FilePath -PathType Leaf)) {
+            [System.Windows.MessageBox]::Show("找不到需要的脚本：$FilePath", '缺少文件', 'OK', 'Error') | Out-Null
+            return
+        }
+
+        $argumentValues = @('-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', $FilePath) + @($Arguments)
+        $argumentLine = (($argumentValues | ForEach-Object {
+            ConvertTo-CommandLineArgument -Value ([string]$_)
+        }) -join ' ')
+
+        $startInfo = New-Object System.Diagnostics.ProcessStartInfo
+        $startInfo.FileName = (Get-Command powershell.exe -ErrorAction Stop).Source
+        $startInfo.Arguments = $argumentLine
+        $startInfo.WorkingDirectory = $projectRoot
+        $startInfo.UseShellExecute = $false
+        $startInfo.RedirectStandardOutput = $true
+        $startInfo.RedirectStandardError = $true
+        $startInfo.CreateNoWindow = $true
+
+        $process = New-Object System.Diagnostics.Process
+        $process.StartInfo = $startInfo
+        if (-not $process.Start()) {
+            throw '无法启动子 PowerShell 进程。'
+        }
+
+        $outputTask = $process.StandardOutput.ReadToEndAsync()
+        $errorTask = $process.StandardError.ReadToEndAsync()
+        $script:ActiveTask = [pscustomobject]@{
+            Title = $Title
+            Process = $process
+            OutputTask = $outputTask
+            ErrorTask = $errorTask
+        }
+        Set-SetupBusy -Busy $true -Status "$Title 正在执行，请稍候……"
+        Add-SetupLog "[START] $Title"
+        $script:TaskTimer.Start()
     }
-    if (-not (Test-Path -LiteralPath $FilePath -PathType Leaf)) {
-        [System.Windows.MessageBox]::Show("找不到需要的脚本：$FilePath", '缺少文件', 'OK', 'Error') | Out-Null
-        return
+    catch {
+        if ($null -ne $process) {
+            try {
+                if (-not $process.HasExited) {
+                    $process.Kill()
+                }
+                $process.Dispose()
+            }
+            catch {
+            }
+        }
+        $script:ActiveTask = $null
+        try {
+            Set-SetupBusy -Busy $false -Status '任务未能启动。'
+        }
+        catch {
+            Write-Warning '无法恢复向导任务状态。'
+        }
+        Show-SetupFailure -Title '无法启动任务' -Summary "$Title 未能启动。" -ErrorObject $_
     }
-    Set-SetupBusy -Busy $true -Status "$Title 正在执行，请稍候……"
-    Add-SetupLog "[START] $Title"
-    $script:TaskWorker.RunWorkerAsync([pscustomobject]@{
-        Title = $Title
-        FilePath = $FilePath
-        Arguments = @($Arguments)
-        WorkingDirectory = $projectRoot
-    })
 }
 
 function Select-GsvRoot {
@@ -722,6 +829,28 @@ $window.FindName('BtnCopyDownloadInstructions').Add_Click({
     Copy-SetupText "先解压基础包，双击 Setup-Center.cmd，按页签完成 Docker、QQ、模型配置；需要时再导入文本人格包和语音包。所有账号、密钥与白名单都由你自己创建，不要把它们发给我。"
 })
 
+$window.Dispatcher.add_UnhandledException({
+    param($sender, $eventArgs)
+
+    try {
+        $eventArgs.Handled = $true
+        try {
+            Set-SetupBusy -Busy $false -Status '向导已捕获错误，请查看日志。'
+        }
+        catch {
+            Write-Warning '无法恢复向导任务状态。'
+        }
+        Show-SetupFailure -Title '向导已捕获错误' -Summary '操作没有完成，但窗口仍可继续使用。' -ErrorObject $eventArgs.Exception
+    }
+    catch {
+        try {
+            $eventArgs.Handled = $true
+        }
+        catch {
+        }
+        Write-Warning '向导发生未处理错误。'
+    }
+})
 Add-SetupLog '欢迎使用可视化配置中心。建议从“开始”页执行一次本机状态检查。'
 if ($ValidateOnly) {
     Write-Output 'SETUP_CENTER_XAML_OK'
