@@ -127,7 +127,7 @@ $xaml = @'
                                 <Border Style="{StaticResource Card}">
                                     <StackPanel>
                                         <TextBlock Text="第一次请按下列顺序完成" FontWeight="SemiBold" FontSize="16" />
-                                        <TextBlock Text="0. 先开启硬件虚拟化并安装 / 验证 WSL 2。\n1. 安装并启动 Docker Desktop。\n2. 在 QQ 开放平台创建自己的官方机器人，并在 AstrBot 绑定。\n3. 在 AstrBot 配置自己的大模型 API。\n4. 可选：安装 GPT-SoVITS，导入有权使用的语音包。\n5. 点击“日常启动”，再测试 @机器人。" TextWrapping="Wrap" LineHeight="25" Margin="0,8,0,0" />
+                                        <TextBlock Text="0. 先开启硬件虚拟化并安装 / 验证 WSL 2。&#x0a;1. 安装并启动 Docker Desktop。&#x0a;2. 在 QQ 开放平台创建自己的官方机器人，并在 AstrBot 绑定。&#x0a;3. 在 AstrBot 配置自己的大模型 API。&#x0a;4. 可选：安装 GPT-SoVITS，导入有权使用的语音包。&#x0a;5. 点击“日常启动”，再测试 @机器人。" TextWrapping="Wrap" LineHeight="25" Margin="0,8,0,0" />
                                     </StackPanel>
                                 </Border>
                                 <Border Style="{StaticResource Card}">
@@ -216,27 +216,36 @@ $xaml = @'
                             <Border Style="{StaticResource Card}">
                                 <StackPanel>
                                     <DockPanel Margin="0,0,0,8"><Border Style="{StaticResource StepNumber}" DockPanel.Dock="Left"><TextBlock Text="1" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" /></Border><TextBlock Text="创建机器人并设置资料" FontWeight="SemiBold" FontSize="16" VerticalAlignment="Center" /></DockPanel>
-                                    <TextBlock Text="打开“我的机器人” → 创建机器人。进入账号信息，设置昵称、简介和头像；QQ 客户端的展示同步有时会延迟，请等待平台审核或缓存刷新。" TextWrapping="Wrap" />
+                                    <TextBlock Text="① 在“我的机器人”点击“创建机器人”，按页面完成名称、类型等必填项。&#x0a;② 创建后进入“账号信息”，设置头像、昵称、简介，并在每页点击保存。&#x0a;③ 后台头像不会总是即时同步到聊天列表或群内，请等待审核/缓存刷新，不要重复创建机器人。" TextWrapping="Wrap" LineHeight="22" />
                                     <Button x:Name="BtnOpenQqPlatform" Style="{StaticResource PrimaryButton}" Content="打开 QQ 开放平台 · 我的机器人" HorizontalAlignment="Left" />
                                 </StackPanel>
                             </Border>
                             <Border Style="{StaticResource Card}">
                                 <StackPanel>
                                     <DockPanel Margin="0,0,0,8"><Border Style="{StaticResource StepNumber}" DockPanel.Dock="Left"><TextBlock Text="2" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" /></Border><TextBlock Text="开发设置：选择 WebSocket，保存 AppID / AppSecret" FontWeight="SemiBold" FontSize="16" VerticalAlignment="Center" /></DockPanel>
-                                    <TextBlock Text="在“开发设置”中把事件订阅方式设为 WebSocket。复制 AppID 和 AppSecret；它们随后只填写在 AstrBot 的 QQ 官方机器人适配器里。AppSecret 相当于密码，不能发给任何人。" TextWrapping="Wrap" />
+                                    <TextBlock Text="① 开发设置 → 事件订阅与回调地址，选择 WebSocket 并保存；不要填写 localhost 地址，也无需开放家庭路由器端口。&#x0a;② 复制 AppID；点击 AppSecret 旁小眼睛后复制 AppSecret。&#x0a;③ 两项只填写到 AstrBot 的 QQ 官方机器人适配器；AppSecret 相当于密码，不能分享、截图或上传 GitHub。" TextWrapping="Wrap" LineHeight="22" />
                                 </StackPanel>
                             </Border>
                             <Border Style="{StaticResource Card}">
                                 <StackPanel>
                                     <DockPanel Margin="0,0,0,8"><Border Style="{StaticResource StepNumber}" DockPanel.Dock="Left"><TextBlock Text="3" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" /></Border><TextBlock Text="服务器 IP 白名单：登记当前公网出口 IP" FontWeight="SemiBold" FontSize="16" VerticalAlignment="Center" /></DockPanel>
-                                    <TextBlock Text="白名单填写的是当前 VPN / 网络的公网出口 IPv4，不是 127.0.0.1、路由器内网地址或手机热点地址。若换 VPN 节点或关闭 VPN，出口 IP 改变后就要回 QQ 平台更新白名单。WebSocket 不需要开放家庭路由器端口。" TextWrapping="Wrap" />
-                                    <WrapPanel><Button x:Name="BtnVpnStatus" Style="{StaticResource PrimaryButton}" Content="检测当前出口 IP" /><Button x:Name="BtnCopyQqChecklist" Content="复制 QQ 配置清单" /></WrapPanel>
+                                    <TextBlock Text="它不是 QQ 主动连接你的电脑，而是允许“哪一个公网出口 IP”调用 QQ 平台 API 的名单。点击检测 → 复制 IP → 回到 QQ 开放平台“开发设置” → “服务器 IP 白名单” → “添加 IP” → 粘贴保存。&#x0a;不能填 127.0.0.1、192.168.x.x、路由器或手机热点地址。若使用 VPN，必须登记当前 VPN 节点的公网出口 IP；断开 VPN、换节点或换网络后 IP 改变，就重新检测并更新白名单。" TextWrapping="Wrap" LineHeight="22" />
+                                    <TextBlock Text="“复制 QQ 配置待办”只是给你粘贴到记事本逐项核对的清单，不需要粘贴到 QQ 或 AstrBot 的任何输入框。" Foreground="#4A5F78" Margin="0,8,0,0" TextWrapping="Wrap" />
+                                    <WrapPanel><Button x:Name="BtnVpnStatus" Style="{StaticResource PrimaryButton}" Content="检测当前出口 IP" /><Button x:Name="BtnCopyQqChecklist" Content="复制 QQ 配置待办" /></WrapPanel>
+                                    <Border x:Name="QqWhitelistResultCard" Visibility="Collapsed" Background="#EAF7EE" BorderBrush="#78B986" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,8,0,0">
+                                        <StackPanel>
+                                            <TextBlock Text="请复制并粘贴到 QQ 开放平台的“服务器 IP 白名单”：" Foreground="#1E5C34" FontWeight="SemiBold" />
+                                            <TextBlock x:Name="TxtQqWhitelistIp" FontFamily="Consolas" FontSize="22" FontWeight="Bold" Foreground="#146B32" Margin="0,5,0,2" />
+                                            <TextBlock x:Name="TxtQqWhitelistHint" Foreground="#38694B" TextWrapping="Wrap" />
+                                            <Button x:Name="BtnCopyDetectedQqIp" Style="{StaticResource PrimaryButton}" Content="再次复制此 IP" HorizontalAlignment="Left" />
+                                        </StackPanel>
+                                    </Border>
                                 </StackPanel>
                             </Border>
                             <Border Style="{StaticResource Card}">
                                 <StackPanel>
                                     <DockPanel Margin="0,0,0,8"><Border Style="{StaticResource StepNumber}" DockPanel.Dock="Left"><TextBlock Text="4" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" /></Border><TextBlock Text="开发体验用户与 AstrBot 接入" FontWeight="SemiBold" FontSize="16" VerticalAlignment="Center" /></DockPanel>
-                                    <TextBlock Text="在 QQ 平台的“开发体验号设置”添加你用于测试的 QQ 号。然后打开 AstrBot → 机器人，创建 QQ 官方机器人适配器，填入刚才的 AppID / AppSecret 并保存。最后在 QQ 中 @机器人测试。" TextWrapping="Wrap" />
+                                    <TextBlock Text="① QQ 平台“开发设置”下方的“开发体验号设置”：添加你自己的测试 QQ 号并保存。&#x0a;② AstrBot → 机器人 → 创建机器人：选择 QQ 官方机器人适配器，粘贴 AppID、AppSecret，启用并保存。&#x0a;③ 用测试 QQ 添加机器人或加入测试群（按 QQ 页面允许方式），发送 @机器人 + 一句文字；收到文字和语音即完成。" TextWrapping="Wrap" LineHeight="22" />
                                     <Button x:Name="BtnOpenAstrBotPlatforms" Style="{StaticResource PrimaryButton}" Content="打开 AstrBot · 机器人配置" HorizontalAlignment="Left" />
                                 </StackPanel>
                             </Border>
@@ -252,7 +261,7 @@ $xaml = @'
                             <Border Style="{StaticResource Card}">
                                 <StackPanel>
                                     <TextBlock Text="按这个顺序配置" FontSize="17" FontWeight="SemiBold" />
-                                    <TextBlock Text="1. AstrBot → 模型提供商，新增与你的服务兼容的提供商（常见为 OpenAI API 兼容）。\n2. 输入服务 Base URL、你的 API Key、模型名称；保存后把它选为默认对话模型。\n3. 在聊天页发送一句“只回复：连接成功。”确认没有报错。\n4. 再到 人格 / Persona 页面导入自己的中性或原创人设提示词。" TextWrapping="Wrap" LineHeight="25" Margin="0,7,0,8" />
+                                    <TextBlock Text="1. AstrBot → 模型提供商，新增与你的服务兼容的提供商（常见为 OpenAI API 兼容）。&#x0a;2. 输入服务 Base URL、你的 API Key、模型名称；保存后把它选为默认对话模型。&#x0a;3. 在聊天页发送一句“只回复：连接成功。”确认没有报错。&#x0a;4. 再到 人格 / Persona 页面导入自己的中性或原创人设提示词。" TextWrapping="Wrap" LineHeight="25" Margin="0,7,0,8" />
                                     <TextBlock Text="新手选择：默认优先选文本对话 / Chat / Instruct 模型；Thinking、R1 一类只作为复杂问题备用。Embedding、图像、视频、ASR、TTS、Rerank 不能当默认对话模型。" TextWrapping="Wrap" Foreground="#4A5F78" Margin="0,0,0,8" />
                                     <WrapPanel>
                                         <Button x:Name="BtnOpenProviders" Style="{StaticResource PrimaryButton}" Content="打开 AstrBot · 模型提供商" />
@@ -438,6 +447,10 @@ $script:VoicePackTextBox = $window.FindName('TxtVoicePack')
 $script:PersonaPackTextBox = $window.FindName('TxtPersonaPack')
 $script:GsvRootTextBox.Text = Get-CurrentGsvRoot
 
+$script:QqWhitelistResultCard = $window.FindName('QqWhitelistResultCard')
+$script:QqWhitelistIpText = $window.FindName('TxtQqWhitelistIp')
+$script:QqWhitelistHint = $window.FindName('TxtQqWhitelistHint')
+
 function Add-SetupLog {
     param([Parameter(Mandatory = $true)][string]$Text)
 
@@ -571,6 +584,18 @@ function Complete-SetupTask {
     )
 
     Set-SetupBusy -Busy $false
+    if ($Title -eq '公网出口 IP 检测') {
+        $ipMatch = [regex]::Match([string]$Output, '(?:Current public egress IP:|VPN/IP whitelist egress\s+current=)\s*(?<ip>[0-9.]+)')
+        if ($ipMatch.Success) {
+            $ip = $ipMatch.Groups['ip'].Value
+            $script:QqWhitelistIpText.Text = $ip
+            $script:QqWhitelistHint.Text = '已自动复制。请粘贴到 QQ 开放平台 → 开发设置 → 服务器 IP 白名单 → 添加 IP。'
+            $script:QqWhitelistResultCard.Visibility = [System.Windows.Visibility]::Visible
+            [System.Windows.Clipboard]::SetText($ip)
+            $Output = "[COPY] QQ 白名单公网 IPv4：$ip"
+            $script:TaskState.Text = "已检测并复制 QQ 白名单 IP：$ip"
+        }
+    }
     if (-not [string]::IsNullOrWhiteSpace([string]$Output)) {
         Add-SetupLog $Output.TrimEnd()
     }
@@ -866,6 +891,15 @@ $window.FindName('BtnCopyQqChecklist').Add_Click({
 })
 $window.FindName('BtnCopyDownloadInstructions').Add_Click({
     Copy-SetupText "先完成 WSL 2 / 虚拟化前置，再解压基础包并双击 Setup-Center.cmd，按页签完成 Docker、QQ、模型配置；需要时再导入文本人格包和语音包。所有账号、密钥与白名单都由你自己创建，不要把它们发给我。"
+})
+$window.FindName('BtnCopyDetectedQqIp').Add_Click({
+    $ip = [string]$script:QqWhitelistIpText.Text
+    if ([string]::IsNullOrWhiteSpace($ip)) {
+        [System.Windows.MessageBox]::Show('请先点击“检测当前出口 IP”。', '还没有检测结果', 'OK', 'Information') | Out-Null
+        return
+    }
+    Copy-SetupText $ip
+    $script:QqWhitelistHint.Text = '已再次复制。请粘贴到 QQ 开放平台的“服务器 IP 白名单”。'
 })
 
 $window.Dispatcher.add_UnhandledException({

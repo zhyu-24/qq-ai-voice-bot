@@ -16,7 +16,9 @@ $composePath = Join-Path $projectRoot 'compose.yml'
 $dockerGuidePath = Join-Path $projectRoot 'docs\DOCKER_WSL2_GUIDE.md'
 
 if (-not (Test-Path -LiteralPath $runtimeConfigPath)) {
-    throw "Missing local runtime config: $runtimeConfigPath. Copy config\local-runtime.psd1.example to local-runtime.psd1 first."
+    Write-Host '[INFO] This folder is not configured as a local runtime, so the bot was not started.'
+    Write-Host '[HINT] Use Setup-Center.cmd from the runtime folder (with data and config\local-runtime.psd1). For a first install, click Start AstrBot.'
+    exit 2
 }
 if (-not (Test-Path -LiteralPath $composePath)) {
     throw "Missing compose file: $composePath"

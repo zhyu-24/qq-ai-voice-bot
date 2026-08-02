@@ -13,6 +13,11 @@ $config = $null
 if (Test-Path -LiteralPath $configPath) {
     $config = Import-PowerShellDataFile -Path $configPath
 }
+else {
+    Write-Host '[INFO] This folder has no local runtime config (config\local-runtime.psd1).'
+    Write-Host '[HINT] This is usually the creator/source folder. Run status or daily start from the actual runtime folder.'
+    exit 0
+}
 
 function Write-Check {
     param(
