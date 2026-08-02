@@ -1,4 +1,4 @@
-function Read-StrictUtf8Text {
+﻿function Read-StrictUtf8Text {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)][string]$Path,

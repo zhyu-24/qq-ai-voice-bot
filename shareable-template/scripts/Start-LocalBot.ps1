@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
     [int]$StartupDelaySeconds = -1,
     [switch]$SkipGptSoVits,

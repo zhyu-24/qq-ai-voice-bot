@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
     [string]$PackagePath = (Join-Path (Split-Path -Parent $PSScriptRoot) 'shareable-template')
 )
