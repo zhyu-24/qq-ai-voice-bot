@@ -10,6 +10,12 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+$cmdConfigHelperPath = Join-Path $PSScriptRoot 'CmdConfig.Common.ps1'
+if (-not (Test-Path -LiteralPath $cmdConfigHelperPath -PathType Leaf)) {
+    throw 'The safe configuration helper is missing.'
+}
+. $cmdConfigHelperPath
+
 if ([string]::IsNullOrWhiteSpace($PackRoot)) {
     $packRoot = Split-Path -Parent $PSScriptRoot
 }
@@ -123,21 +129,22 @@ if ($SetAsDefault) {
     if (-not (Test-Path -LiteralPath $astrConfigPath -PathType Leaf)) {
         throw 'AstrBot configuration is not available yet. Create and save the persona in AstrBot first, then run this step again.'
     }
-    $astrConfig = (Get-Content -LiteralPath $astrConfigPath -Raw) | ConvertFrom-Json
+    $astrConfig = Read-StrictUtf8Json -Path $astrConfigPath -Label 'AstrBot configuration'
     $providerSettings = $astrConfig.provider_settings
     if ($null -eq $providerSettings) {
         $providerSettings = [pscustomobject]@{}
         Set-ObjectProperty -Object $astrConfig -Name 'provider_settings' -Value $providerSettings
     }
-
-    $backupDirectory = Join-Path $botRoot 'backups'
-    [System.IO.Directory]::CreateDirectory($backupDirectory) | Out-Null
-    $backupPath = Join-Path $backupDirectory ('cmd_config.before-persona-pack-' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '.json')
-    Copy-Item -LiteralPath $astrConfigPath -Destination $backupPath
     Set-ObjectProperty -Object $providerSettings -Name 'default_personality' -Value $personaId
 
-    $utf8 = New-Object System.Text.UTF8Encoding($false)
-    [System.IO.File]::WriteAllText($astrConfigPath, ($astrConfig | ConvertTo-Json -Depth 30) + [Environment]::NewLine, $utf8)
+    $validatePersonaConfig = {
+        param($candidate)
+        if ($null -eq $candidate.provider_settings -or [string]$candidate.provider_settings.default_personality -ne $personaId) {
+            throw 'The updated AstrBot configuration did not retain the selected default persona.'
+        }
+    }
+    $backupDirectory = Join-Path $botRoot 'backups'
+    $backupPath = Write-AtomicUtf8Json -Path $astrConfigPath -Value $astrConfig -BackupDirectory $backupDirectory -BackupPrefix 'cmd_config.before-persona-pack' -Validate $validatePersonaConfig -Label 'AstrBot configuration' -Depth 30
     Write-Host "[OK] Set default_personality to $personaId"
     Write-Host "[OK] Backed up AstrBot configuration: $backupPath"
     Write-Host '[INFO] Restart AstrBot or click 日常启动 once before testing a new conversation.'

@@ -9,6 +9,12 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+$cmdConfigHelperPath = Join-Path $PSScriptRoot 'CmdConfig.Common.ps1'
+if (-not (Test-Path -LiteralPath $cmdConfigHelperPath -PathType Leaf)) {
+    throw 'The safe configuration helper is missing.'
+}
+. $cmdConfigHelperPath
+
 if ([string]::IsNullOrWhiteSpace($PackRoot)) {
     $packRoot = Split-Path -Parent $PSScriptRoot
 }
@@ -132,6 +138,8 @@ foreach ($entry in $entries) {
     }
 }
 
+$astrConfig = Read-StrictUtf8Json -Path $astrConfigPath -Label 'AstrBot configuration'
+
 $gptTargetDirectory = Join-Path $gsvRoot 'GPT_weights_v2ProPlus'
 $sovitsTargetDirectory = Join-Path $gsvRoot 'SoVITS_weights_v2ProPlus'
 $referenceTargetDirectory = Join-Path $gsvRoot "reference_audio\$packId"
@@ -147,16 +155,13 @@ $sovitsTarget = Join-Path $sovitsTargetDirectory "$packId-$([System.IO.Path]::Ge
 $referenceTarget = Join-Path $referenceTargetDirectory ([System.IO.Path]::GetFileName([string]$referenceEntry.relative_path))
 
 foreach ($targetPath in @($gptTarget, $sovitsTarget, $referenceTarget)) {
-    if ((Test-Path -LiteralPath $targetPath) -and -not $Force) {
-        throw "A destination file already exists: $targetPath. Use -Force only if you intend to replace this pack."
+    if (Test-Path -LiteralPath $targetPath) {
+        if ($Force) {
+            throw "Replacing an existing imported voice pack is not supported by the safe installer. Remove or rename the existing pack after making your own backup, then import again: $targetPath"
+        }
+        throw "A destination file already exists: $targetPath. Repeated import was safely refused."
     }
 }
-
-Copy-Item -LiteralPath (Get-SafeChildPath -Root $packRoot -RelativePath ([string]$gptEntry.relative_path)) -Destination $gptTarget -Force
-Copy-Item -LiteralPath (Get-SafeChildPath -Root $packRoot -RelativePath ([string]$sovitsEntry.relative_path)) -Destination $sovitsTarget -Force
-Copy-Item -LiteralPath (Get-SafeChildPath -Root $packRoot -RelativePath ([string]$referenceEntry.relative_path)) -Destination $referenceTarget -Force
-
-$astrConfig = Get-Content -LiteralPath $astrConfigPath -Raw | ConvertFrom-Json
 $providerId = [string]$manifest.astrbot.provider_id
 $providers = @($astrConfig.provider)
 $provider = @($providers | Where-Object { $_.id -eq $providerId }) | Select-Object -First 1
@@ -190,14 +195,40 @@ Set-ObjectProperty -Object $ttsSettings -Name 'provider_id' -Value $providerId
 Set-ObjectProperty -Object $ttsSettings -Name 'dual_output' -Value $true
 Set-ObjectProperty -Object $ttsSettings -Name 'trigger_probability' -Value 1
 
-$backupDirectory = Join-Path $botRoot 'backups'
-[System.IO.Directory]::CreateDirectory($backupDirectory) | Out-Null
-$backupPath = Join-Path $backupDirectory ('cmd_config.before-voice-pack-' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '.json')
-Copy-Item -LiteralPath $astrConfigPath -Destination $backupPath
+$validateVoiceConfig = {
+    param($candidate)
+    if ($null -eq $candidate.provider_tts_settings -or [string]$candidate.provider_tts_settings.provider_id -ne $providerId -or -not $candidate.provider_tts_settings.enable) {
+        throw 'The updated AstrBot configuration did not retain the selected TTS provider.'
+    }
+    $candidateProvider = @($candidate.provider | Where-Object { [string]$_.id -eq $providerId }) | Select-Object -First 1
+    if ($null -eq $candidateProvider -or [string]$candidateProvider.type -ne 'gsv_tts_selfhost') {
+        throw 'The updated AstrBot configuration did not retain the local GPT-SoVITS provider.'
+    }
+}
 
-$utf8 = New-Object System.Text.UTF8Encoding($false)
-$updatedJson = $astrConfig | ConvertTo-Json -Depth 30
-[System.IO.File]::WriteAllText($astrConfigPath, $updatedJson + [Environment]::NewLine, $utf8)
+$createdAssetPaths = New-Object System.Collections.Generic.List[string]
+$backupDirectory = Join-Path $botRoot 'backups'
+try {
+    Copy-Item -LiteralPath (Get-SafeChildPath -Root $packRoot -RelativePath ([string]$gptEntry.relative_path)) -Destination $gptTarget
+    $createdAssetPaths.Add($gptTarget)
+    Copy-Item -LiteralPath (Get-SafeChildPath -Root $packRoot -RelativePath ([string]$sovitsEntry.relative_path)) -Destination $sovitsTarget
+    $createdAssetPaths.Add($sovitsTarget)
+    Copy-Item -LiteralPath (Get-SafeChildPath -Root $packRoot -RelativePath ([string]$referenceEntry.relative_path)) -Destination $referenceTarget
+    $createdAssetPaths.Add($referenceTarget)
+
+    $backupPath = Write-AtomicUtf8Json -Path $astrConfigPath -Value $astrConfig -BackupDirectory $backupDirectory -BackupPrefix 'cmd_config.before-voice-pack' -Validate $validateVoiceConfig -Label 'AstrBot configuration' -Depth 30
+}
+catch {
+    foreach ($createdAssetPath in $createdAssetPaths) {
+        if (Test-Path -LiteralPath $createdAssetPath -PathType Leaf) {
+            Remove-Item -LiteralPath $createdAssetPath -Force -ErrorAction SilentlyContinue
+        }
+    }
+    if ((Test-Path -LiteralPath $referenceTargetDirectory -PathType Container) -and -not (Get-ChildItem -LiteralPath $referenceTargetDirectory -Force | Select-Object -First 1)) {
+        Remove-Item -LiteralPath $referenceTargetDirectory -Force -ErrorAction SilentlyContinue
+    }
+    throw
+}
 
 Write-Host '[OK] Voice assets copied and hashes verified.'
 Write-Host "[OK] Backed up AstrBot configuration: $backupPath"

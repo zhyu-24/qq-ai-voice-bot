@@ -180,7 +180,12 @@ function Preload-GsvWeights {
     }
 
     try {
-        $astrConfig = Get-Content -LiteralPath $astrConfigPath -Raw | ConvertFrom-Json
+        $cmdConfigHelperPath = Join-Path $PSScriptRoot 'CmdConfig.Common.ps1'
+        if (-not (Test-Path -LiteralPath $cmdConfigHelperPath -PathType Leaf)) {
+            throw 'The safe configuration helper is missing.'
+        }
+        . $cmdConfigHelperPath
+        $astrConfig = Read-StrictUtf8Json -Path $astrConfigPath -Label 'AstrBot configuration'
         $ttsSettings = $astrConfig.provider_tts_settings
         if ($null -eq $ttsSettings -or -not $ttsSettings.enable -or [string]::IsNullOrWhiteSpace([string]$ttsSettings.provider_id)) {
             Write-Host "[INFO] AstrBot TTS is not enabled; no GPT-SoVITS weights were preloaded."
@@ -216,7 +221,7 @@ function Preload-GsvWeights {
         }
     }
     catch {
-        Write-Warning "Could not preload custom TTS weights. AstrBot will still start. Details: $($_.Exception.Message)"
+        Write-Warning 'Could not safely read the custom TTS configuration, so voice weights were not preloaded. AstrBot will still start. Configuration contents were not printed.'
     }
 }
 

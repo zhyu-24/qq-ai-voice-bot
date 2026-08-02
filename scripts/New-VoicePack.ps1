@@ -9,6 +9,12 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $projectRoot = Split-Path -Parent $PSScriptRoot
+$cmdConfigHelperPath = Join-Path $PSScriptRoot 'CmdConfig.Common.ps1'
+if (-not (Test-Path -LiteralPath $cmdConfigHelperPath -PathType Leaf)) {
+    throw 'The safe configuration helper is missing.'
+}
+. $cmdConfigHelperPath
+
 $astrConfigPath = Join-Path $projectRoot 'data\cmd_config.json'
 $templateRoot = Join-Path $projectRoot 'voice-pack-template'
 $validatorPath = Join-Path $PSScriptRoot 'Test-VoicePack.ps1'
@@ -46,7 +52,7 @@ function Get-RequiredFile {
     return (Resolve-Path -LiteralPath $PathValue).Path
 }
 
-$astrConfig = Get-Content -LiteralPath $astrConfigPath -Raw | ConvertFrom-Json
+$astrConfig = Read-StrictUtf8Json -Path $astrConfigPath -Label 'AstrBot configuration'
 $ttsSettings = $astrConfig.provider_tts_settings
 if ($null -eq $ttsSettings -or -not $ttsSettings.enable -or [string]::IsNullOrWhiteSpace([string]$ttsSettings.provider_id)) {
     throw 'AstrBot local TTS is not enabled.'
