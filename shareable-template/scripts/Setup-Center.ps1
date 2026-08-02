@@ -12,6 +12,112 @@ Add-Type -AssemblyName PresentationCore
 Add-Type -AssemblyName WindowsBase
 Add-Type -AssemblyName System.Windows.Forms
 
+if (-not ('QqAiVoiceBot.SetupCenter.ProcessCapture' -as [type])) {
+    Add-Type -TypeDefinition @'
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Text;
+
+namespace QqAiVoiceBot.SetupCenter
+{
+    public sealed class CapturedLine
+    {
+        public string Text { get; set; }
+        public bool IsError { get; set; }
+    }
+
+    public sealed class ProcessCapture : IDisposable
+    {
+        private readonly ConcurrentQueue<CapturedLine> lines = new ConcurrentQueue<CapturedLine>();
+        private readonly StringBuilder output = new StringBuilder();
+        private readonly StringBuilder error = new StringBuilder();
+
+        public Process Process { get; private set; }
+
+        public bool Start(ProcessStartInfo startInfo)
+        {
+            Process = new Process();
+            Process.StartInfo = startInfo;
+            Process.OutputDataReceived += OnOutputDataReceived;
+            Process.ErrorDataReceived += OnErrorDataReceived;
+            if (!Process.Start())
+            {
+                return false;
+            }
+            Process.BeginOutputReadLine();
+            Process.BeginErrorReadLine();
+            return true;
+        }
+
+        private void OnOutputDataReceived(object sender, DataReceivedEventArgs eventArgs)
+        {
+            if (eventArgs.Data == null) return;
+            lock (output) output.AppendLine(eventArgs.Data);
+            lines.Enqueue(new CapturedLine { Text = eventArgs.Data, IsError = false });
+        }
+
+        private void OnErrorDataReceived(object sender, DataReceivedEventArgs eventArgs)
+        {
+            if (eventArgs.Data == null) return;
+            lock (error) error.AppendLine(eventArgs.Data);
+            lines.Enqueue(new CapturedLine { Text = eventArgs.Data, IsError = true });
+        }
+
+        public CapturedLine[] DrainLines()
+        {
+            var drained = new List<CapturedLine>();
+            CapturedLine line;
+            while (lines.TryDequeue(out line)) drained.Add(line);
+            return drained.ToArray();
+        }
+
+        public string GetOutput()
+        {
+            lock (output) return output.ToString();
+        }
+
+        public string GetErrorOutput()
+        {
+            lock (error) return error.ToString();
+        }
+
+        public bool HasExited
+        {
+            get
+            {
+                try { return Process != null && Process.HasExited; }
+                catch { return false; }
+            }
+        }
+
+        public int ExitCode
+        {
+            get { return Process.ExitCode; }
+        }
+
+        public void StopReading()
+        {
+            if (Process == null) return;
+            try { Process.CancelOutputRead(); } catch { }
+            try { Process.CancelErrorRead(); } catch { }
+        }
+
+        public void Dispose()
+        {
+            if (Process == null) return;
+            StopReading();
+            Process.OutputDataReceived -= OnOutputDataReceived;
+            Process.ErrorDataReceived -= OnErrorDataReceived;
+            Process.Dispose();
+            Process = null;
+        }
+    }
+}
+'@
+}
+
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $scriptsRoot = $PSScriptRoot
 
@@ -454,9 +560,51 @@ $script:QqWhitelistHint = $window.FindName('TxtQqWhitelistHint')
 function Add-SetupLog {
     param([Parameter(Mandatory = $true)][string]$Text)
 
-    $prefix = Get-Date -Format 'HH:mm:ss'
-    $script:OutputBox.AppendText("[$prefix] $Text`r`n")
+    $lines = [regex]::Split([string]$Text, "`r?`n")
+    foreach ($line in $lines) {
+        if ([string]::IsNullOrEmpty($line)) {
+            continue
+        }
+        $prefix = Get-Date -Format 'HH:mm:ss'
+        $script:OutputBox.AppendText("[$prefix] $line`r`n")
+    }
     $script:OutputBox.ScrollToEnd()
+}
+
+function Add-SetupTaskBoundary {
+    param(
+        [Parameter(Mandatory = $true)][string]$Title,
+        [Parameter(Mandatory = $true)][ValidateSet('START', 'OK', 'FAIL')][string]$State,
+        [int]$ExitCode = 0
+    )
+
+    $prefix = Get-Date -Format 'HH:mm:ss'
+    $separator = '=' * 68
+    $label = switch ($State) {
+        'START' { "[TASK START] $Title" }
+        'OK' { "[TASK OK] $Title 已完成" }
+        'FAIL' { "[TASK FAIL] $Title 失败（退出码 $ExitCode）" }
+    }
+    $script:OutputBox.AppendText("`r`n[$prefix] $separator`r`n")
+    $script:OutputBox.AppendText("[$prefix] $label`r`n")
+    $script:OutputBox.AppendText("[$prefix] $separator`r`n")
+    $script:OutputBox.ScrollToEnd()
+}
+
+function Add-SetupCapturedLines {
+    param([Parameter(Mandatory = $true)]$Capture)
+
+    foreach ($capturedLine in @($Capture.DrainLines())) {
+        if ([string]::IsNullOrEmpty([string]$capturedLine.Text)) {
+            continue
+        }
+        if ($capturedLine.IsError) {
+            Add-SetupLog "[stderr] $($capturedLine.Text)"
+        }
+        else {
+            Add-SetupLog ([string]$capturedLine.Text)
+        }
+    }
 }
 
 function Set-SetupBusy {
@@ -580,7 +728,8 @@ function Complete-SetupTask {
         [Parameter(Mandatory = $true)][string]$Title,
         [Parameter(Mandatory = $true)][int]$ExitCode,
         [AllowNull()][string]$Output,
-        [AllowNull()][string]$ErrorOutput
+        [AllowNull()][string]$ErrorOutput,
+        [switch]$OutputAlreadyLogged
     )
 
     Set-SetupBusy -Busy $false
@@ -592,23 +741,25 @@ function Complete-SetupTask {
             $script:QqWhitelistHint.Text = '已自动复制。请粘贴到 QQ 开放平台 → 开发设置 → 服务器 IP 白名单 → 添加 IP。'
             $script:QqWhitelistResultCard.Visibility = [System.Windows.Visibility]::Visible
             [System.Windows.Clipboard]::SetText($ip)
-            $Output = "[COPY] QQ 白名单公网 IPv4：$ip"
+            Add-SetupLog "[COPY] QQ 白名单公网 IPv4：$ip"
             $script:TaskState.Text = "已检测并复制 QQ 白名单 IP：$ip"
         }
     }
-    if (-not [string]::IsNullOrWhiteSpace([string]$Output)) {
-        Add-SetupLog $Output.TrimEnd()
-    }
-    if (-not [string]::IsNullOrWhiteSpace([string]$ErrorOutput)) {
-        Add-SetupLog "[stderr] $($ErrorOutput.TrimEnd())"
+    if (-not $OutputAlreadyLogged) {
+        if (-not [string]::IsNullOrWhiteSpace([string]$Output)) {
+            Add-SetupLog $Output.TrimEnd()
+        }
+        if (-not [string]::IsNullOrWhiteSpace([string]$ErrorOutput)) {
+            Add-SetupLog "[stderr] $($ErrorOutput.TrimEnd())"
+        }
     }
     if ($ExitCode -eq 0) {
         $script:TaskState.Text = "$Title 已完成。"
-        Add-SetupLog "[OK] $Title 已完成。"
+        Add-SetupTaskBoundary -Title $Title -State 'OK'
     }
     else {
         $script:TaskState.Text = "$Title 失败（退出码 $ExitCode）。"
-        Add-SetupLog "[FAIL] $Title 失败（退出码 $ExitCode）。"
+        Add-SetupTaskBoundary -Title $Title -State 'FAIL' -ExitCode $ExitCode
     }
 }
 
@@ -619,32 +770,44 @@ $script:TaskTimer.Add_Tick({
     param($sender, $eventArgs)
 
     $task = $null
-    $disposeProcess = $false
+    $disposeCapture = $false
     try {
         $task = $script:ActiveTask
         if ($null -eq $task) {
             $script:TaskTimer.Stop()
             return
         }
-        if (-not $task.Process.HasExited) {
+
+        Add-SetupCapturedLines -Capture $task.Capture
+        if (-not $task.Capture.HasExited) {
             return
         }
-        if (-not $task.OutputTask.IsCompleted -or -not $task.ErrorTask.IsCompleted) {
+
+        if ($null -eq $task.ExitObservedAt) {
+            $task.ExitObservedAt = Get-Date
+            return
+        }
+
+        # Give asynchronous output callbacks a short grace period, then finish even
+        # if a descendant process inherited the original stdout/stderr handles.
+        if (((Get-Date) - $task.ExitObservedAt).TotalMilliseconds -lt 750) {
             return
         }
 
         $script:TaskTimer.Stop()
-        $output = [string]$task.OutputTask.GetAwaiter().GetResult()
-        $errorOutput = [string]$task.ErrorTask.GetAwaiter().GetResult()
-        $exitCode = [int]$task.Process.ExitCode
+        $task.Capture.StopReading()
+        Add-SetupCapturedLines -Capture $task.Capture
+        $output = [string]$task.Capture.GetOutput()
+        $errorOutput = [string]$task.Capture.GetErrorOutput()
+        $exitCode = [int]$task.Capture.ExitCode
         $script:ActiveTask = $null
-        $disposeProcess = $true
-        Complete-SetupTask -Title $task.Title -ExitCode $exitCode -Output $output -ErrorOutput $errorOutput
+        $disposeCapture = $true
+        Complete-SetupTask -Title $task.Title -ExitCode $exitCode -Output $output -ErrorOutput $errorOutput -OutputAlreadyLogged
     }
     catch {
         $script:TaskTimer.Stop()
         $script:ActiveTask = $null
-        $disposeProcess = $true
+        $disposeCapture = $true
         try {
             Set-SetupBusy -Busy $false -Status '执行失败，请查看日志。'
         }
@@ -654,9 +817,9 @@ $script:TaskTimer.Add_Tick({
         Show-SetupFailure -Title '后台任务异常' -Summary '向导已捕获后台任务错误，窗口可以继续使用。' -ErrorObject $_
     }
     finally {
-        if ($disposeProcess -and $null -ne $task -and $task.Process.HasExited) {
+        if ($disposeCapture -and $null -ne $task -and $null -ne $task.Capture) {
             try {
-                $task.Process.Dispose()
+                $task.Capture.Dispose()
             }
             catch {
             }
@@ -671,7 +834,7 @@ function Invoke-SetupScript {
         [string[]]$Arguments = @()
     )
 
-    $process = $null
+    $capture = $null
     try {
         if ($null -ne $script:ActiveTask) {
             [System.Windows.MessageBox]::Show('已有任务正在执行，请等待它完成。', '请稍候', 'OK', 'Information') | Out-Null
@@ -696,31 +859,27 @@ function Invoke-SetupScript {
         $startInfo.RedirectStandardError = $true
         $startInfo.CreateNoWindow = $true
 
-        $process = New-Object System.Diagnostics.Process
-        $process.StartInfo = $startInfo
-        if (-not $process.Start()) {
+        $capture = New-Object QqAiVoiceBot.SetupCenter.ProcessCapture
+        if (-not $capture.Start($startInfo)) {
             throw '无法启动子 PowerShell 进程。'
         }
 
-        $outputTask = $process.StandardOutput.ReadToEndAsync()
-        $errorTask = $process.StandardError.ReadToEndAsync()
         $script:ActiveTask = [pscustomobject]@{
             Title = $Title
-            Process = $process
-            OutputTask = $outputTask
-            ErrorTask = $errorTask
+            Capture = $capture
+            ExitObservedAt = $null
         }
         Set-SetupBusy -Busy $true -Status "$Title 正在执行，请稍候……"
-        Add-SetupLog "[START] $Title"
+        Add-SetupTaskBoundary -Title $Title -State 'START'
         $script:TaskTimer.Start()
     }
     catch {
-        if ($null -ne $process) {
+        if ($null -ne $capture) {
             try {
-                if (-not $process.HasExited) {
-                    $process.Kill()
+                if ($null -ne $capture.Process -and -not $capture.HasExited) {
+                    $capture.Process.Kill()
                 }
-                $process.Dispose()
+                $capture.Dispose()
             }
             catch {
             }
@@ -788,6 +947,7 @@ function Invoke-PublisherAction {
 }
 
 $statusScript = Join-Path $scriptsRoot 'Get-LocalBotStatus.ps1'
+$egressIpScript = Join-Path $scriptsRoot 'Get-PublicEgressIp.ps1'
 $startScript = Join-Path $scriptsRoot 'Start-LocalBot.ps1'
 $stopScript = Join-Path $scriptsRoot 'Stop-LocalBot.ps1'
 
@@ -795,8 +955,8 @@ $window.FindName('BtnInitialStatus').Add_Click({ Invoke-SetupScript -Title '本�
 $window.FindName('BtnDockerStatus').Add_Click({ Invoke-SetupScript -Title 'Docker 状态检查' -FilePath $statusScript })
 $window.FindName('BtnVoiceStatus').Add_Click({ Invoke-SetupScript -Title '语音状态检查' -FilePath $statusScript })
 $window.FindName('BtnDailyStatus').Add_Click({ Invoke-SetupScript -Title '本机状态检查' -FilePath $statusScript })
-$window.FindName('BtnVpnStatus').Add_Click({ Invoke-SetupScript -Title '公网出口 IP 检测' -FilePath $statusScript -Arguments @('-CheckVpnEgress') })
-$window.FindName('BtnRunEgressCheck').Add_Click({ Invoke-SetupScript -Title '公网出口 IP 检测' -FilePath $statusScript -Arguments @('-CheckVpnEgress') })
+$window.FindName('BtnVpnStatus').Add_Click({ Invoke-SetupScript -Title '公网出口 IP 检测' -FilePath $egressIpScript })
+$window.FindName('BtnRunEgressCheck').Add_Click({ Invoke-SetupScript -Title '公网出口 IP 检测' -FilePath $egressIpScript })
 
 $window.FindName('BtnInstallWsl').Add_Click({ Open-AdminWslInstall })
 $window.FindName('BtnWslGuide').Add_Click({ Open-SetupFile (Join-Path $projectRoot 'docs\DOCKER_WSL2_GUIDE.md') })
