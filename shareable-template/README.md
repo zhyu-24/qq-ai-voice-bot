@@ -8,23 +8,26 @@
 
 解压后，直接双击 `Setup-Center.cmd`。
 
+> **新电脑的第 0 步：** 在安装 Docker Desktop 前，先按 [Windows Docker / WSL 2 前置指南](docs/DOCKER_WSL2_GUIDE.md) 开启 CPU 虚拟化并安装 WSL 2。若 Docker 显示 “Virtualization support not detected”，这不是 Docker 登录问题，登录不能修复它。
+
 它会打开一个图形化配置中心，按页签完成：
 
-1. 安装 Docker Desktop，并启动 AstrBot；
-2. 在 QQ 开放平台创建机器人、选择 WebSocket、配置 IP 白名单；
-3. 在 AstrBot 中填写自己的 QQ AppID 与 AppSecret；
-4. 按 [模型选择与 API 获取指南](docs/MODEL_AND_API_GUIDE.md) 在 AstrBot 中配置自己的大模型服务和 API Key；
-5. 可选：导入纯文本人格包，复制提示词并在 AstrBot 官方人格页保存；
-6. 可选：安装 GPT-SoVITS、选择本机目录、导入有权使用的语音包 ZIP；
-7. 启动、停止、状态检查与登录后自动启动。
+1. 开启硬件虚拟化并安装 / 验证 WSL 2；
+2. 安装 Docker Desktop，并启动 AstrBot；
+3. 在 QQ 开放平台创建机器人、选择 WebSocket、配置 IP 白名单；
+4. 在 AstrBot 中填写自己的 QQ AppID 与 AppSecret；
+5. 按 [模型选择与 API 获取指南](docs/MODEL_AND_API_GUIDE.md) 在 AstrBot 中配置自己的大模型服务和 API Key；
+6. 可选：导入纯文本人格包，复制提示词并在 AstrBot 官方人格页保存；
+7. 可选：安装 GPT-SoVITS、选择本机目录、导入有权使用的语音包 ZIP；
+8. 启动、停止、状态检查与登录后自动启动。
 
-整个过程不需要手动输入 PowerShell 命令。详细说明在 [docs/SETUP_CENTER.md](docs/SETUP_CENTER.md)；零基础模型/API 指南在 [docs/MODEL_AND_API_GUIDE.md](docs/MODEL_AND_API_GUIDE.md)；人格包说明在 [docs/PERSONA_PACK.md](docs/PERSONA_PACK.md)。
+配置中心会在首次 WSL 2 安装时请求管理员授权并打开终端；其余项目配置不需要手动输入 PowerShell 命令。详细说明在 [docs/SETUP_CENTER.md](docs/SETUP_CENTER.md)；零基础模型/API 指南在 [docs/MODEL_AND_API_GUIDE.md](docs/MODEL_AND_API_GUIDE.md)；人格包说明在 [docs/PERSONA_PACK.md](docs/PERSONA_PACK.md)。
 
 初次使用时请选择服务商列表中的**文本对话模型**；不要误选 Embedding、图像/视频生成、ASR、TTS 或 Rerank 模型。
 
 ## 有梯子 / 大陆下载路线
 
-- Docker：向导内提供 Docker 官方说明和官方下载按钮。
+- Docker：向导内提供 Docker 官方说明、[WSL 2 / 虚拟化前置指南](docs/DOCKER_WSL2_GUIDE.md)和官方下载按钮。个人本机使用通常不需要 Docker 账号；但匿名拉取 Docker Hub 镜像遇到限流时可自行登录。
 - GPT-SoVITS：向导提供 GitHub 发布页（适合可访问 GitHub 的网络）与 ModelScope 的 50 系显卡包链接（适合大陆下载）。请始终选择与你的语音包兼容的运行环境。
 - QQ 开放平台与 AstrBot：向导会打开相应网页，并在页面中列出每一步需要填写的内容。
 

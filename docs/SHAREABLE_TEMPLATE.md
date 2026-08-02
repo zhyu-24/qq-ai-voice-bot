@@ -20,7 +20,9 @@ shareable-template 文件夹是一个独立、无私密内容的项目模板。�
 
 ## 对使用者的真实要求
 
-模板可以把安装体验简化到“安装 Docker 后双击 Install.cmd”，但无法也不应该替他们复制你的线上身份或私有资产。对方仍需：
+模板可以把安装体验简化到“先完成 WSL 2 / 虚拟化，再安装 Docker，最后双击 Install.cmd”，但无法也不应该替他们复制你的线上身份或私有资产。对方仍需：
+
+新电脑的 Docker 前置步骤见 [Windows Docker / WSL 2 前置指南](DOCKER_WSL2_GUIDE.md)。
 
 1. 创建自己的 QQ 官方机器人并填写自己的 AppID、AppSecret 和 IP 白名单。
 2. 创建自己的大模型或云 TTS 配置，并承担自己的 API 费用。

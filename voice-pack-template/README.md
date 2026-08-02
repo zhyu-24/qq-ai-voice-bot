@@ -6,8 +6,8 @@ This package contains authorized model weights and reference audio for one local
 
 You need all of the following:
 
-1. The base QQ AI Voice Bot project has been installed and opened at least once.
-2. Docker Desktop is installed.
+1. CPU virtualization and WSL 2 are enabled, and Docker Desktop shows Engine running. See the base project's docs/DOCKER_WSL2_GUIDE.md.
+2. The base QQ AI Voice Bot project has been installed and opened at least once.
 3. Your own QQ Official Bot and LLM configuration have been completed in AstrBot.
 4. GPT-SoVITS compatible with the pack is installed locally.
 5. In the base project, config\local-runtime.psd1 has a valid GsvRoot.

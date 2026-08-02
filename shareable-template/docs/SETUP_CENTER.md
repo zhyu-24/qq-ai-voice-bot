@@ -1,9 +1,10 @@
 ﻿# 可视化配置中心
 
-双击项目根目录的 `Setup-Center.cmd`，即可使用图形界面完成本机安装、状态检查、文本人格包和语音包导入，以及日常启动；不需要手动输入 PowerShell 命令。
+双击项目根目录的 `Setup-Center.cmd`，即可使用图形界面完成本机安装、状态检查、文本人格包和语音包导入，以及日常启动。首次 WSL 2 安装会请求管理员授权；可点击向导中的“以管理员身份安装 WSL 2”，其余项目配置不需要手动输入 PowerShell 命令。
 
 ## 最短流程
 
+0. 新电脑先完成 [Windows Docker / WSL 2 前置指南](DOCKER_WSL2_GUIDE.md)：开启硬件虚拟化、安装 / 更新 WSL 2，并确认 Docker Engine 能启动。Docker 报“Virtualization support not detected”不是账号问题。
 1. 在 **基础环境** 页安装 Docker Desktop，并点击 **启动 AstrBot**。
 2. 在 **QQ 官方机器人** 页打开 QQ 开放平台，创建自己的机器人。事件订阅选择 WebSocket；把当前公网出口 IPv4 填进服务器 IP 白名单。
 3. 打开 AstrBot 的 **机器人** 页，创建 QQ 官方机器人适配器，并在该页面填写自己的 AppID 与 AppSecret。
@@ -34,6 +35,6 @@ QQ WebSocket 不要求把家庭路由器端口暴露到公网，但 QQ 平台的
 
 - QQ 官方机器人的账号、AppID、AppSecret、体验用户和 IP 白名单；
 - 大模型服务账户、账单与 API Key；
-- Docker Desktop、GPU 驱动和 GPT-SoVITS 本体；
+- CPU 虚拟化、WSL 2、Docker Desktop、GPU 驱动和 GPT-SoVITS 本体；
 - 如依赖固定出口 IP，VPN 客户端自身的登录后自动连接设置；
 - 所有独立人格包、语音包或其他素材的分享范围确认。

@@ -4,7 +4,7 @@
 
 ## 1. 启动 AstrBot
 
-前提：已安装 Docker Desktop，并在本目录打开 PowerShell。
+前提：已先完成 [Windows Docker / WSL 2 前置指南](DOCKER_WSL2_GUIDE.md)，确认 Docker Desktop 显示 Engine running，再在本目录打开 PowerShell。
 
 ```powershell
 docker compose -f compose.yml up -d

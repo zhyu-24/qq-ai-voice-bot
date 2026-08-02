@@ -2,6 +2,8 @@
 
 本目录是当前电脑上的本地部署项目：AstrBot 在 Docker 中运行，GPT-SoVITS 在 Windows 主机上运行，QQ 官方机器人使用 WebSocket 接入。
 
+> **新电脑先看这里：** Docker Desktop 在本项目中依赖 WSL 2 与 CPU 虚拟化。安装 Docker 前，请先完成 [Windows Docker / WSL 2 前置指南](docs/DOCKER_WSL2_GUIDE.md)；Docker 弹出 “Virtualization support not detected” 时，登录账号不能替代这个步骤。
+
 ## 日常使用
 
 直接双击 `Setup-Center.cmd`：
@@ -18,7 +20,7 @@
 
 下载或发布时，请把内容分成彼此独立的包：
 
-- 基础环境包：图形化向导、Docker/AstrBot 启动脚本、文档；解压后双击 `Setup-Center.cmd` 即可跟随傻瓜式教程完成配置。
+- 基础环境包：图形化向导、Docker/AstrBot 启动脚本、文档；新电脑先完成 WSL 2 / 虚拟化前置，再双击 `Setup-Center.cmd` 跟随傻瓜式教程完成配置。
 - 可选人格包：纯文本系统提示词与哈希校验，不带任何媒体或凭据。
 - 可选语音包：如发布者另行提供已训练的爱弥斯语音包，可在向导中一键导入；仅在拥有使用与传播授权时分享。
 

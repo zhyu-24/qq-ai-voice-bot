@@ -107,7 +107,7 @@ $xaml = @'
                     <TextBlock Text="所有本机动作都在这里完成；密钥仍只在 QQ 开放平台与 AstrBot 的官方界面中填写。" Foreground="#C5D9F5" FontSize="13" Margin="0,4,0,0" />
                 </StackPanel>
                 <Border Grid.Column="1" Background="#1D3B65" CornerRadius="6" Padding="12,8" VerticalAlignment="Center">
-                    <TextBlock Text="建议顺序：Docker → QQ → 大模型 → 人格包 → 语音包 → 常驻" Foreground="#EAF3FF" TextWrapping="Wrap" />
+                    <TextBlock Text="建议顺序：WSL 2 / 虚拟化 → Docker → QQ → 大模型 → 人格包 → 语音包 → 常驻" Foreground="#EAF3FF" TextWrapping="Wrap" />
                 </Border>
             </Grid>
         </Border>
@@ -127,7 +127,7 @@ $xaml = @'
                                 <Border Style="{StaticResource Card}">
                                     <StackPanel>
                                         <TextBlock Text="第一次请按下列顺序完成" FontWeight="SemiBold" FontSize="16" />
-                                        <TextBlock Text="1. 安装并启动 Docker Desktop。\n2. 在 QQ 开放平台创建自己的官方机器人，并在 AstrBot 绑定。\n3. 在 AstrBot 配置自己的大模型 API。\n4. 可选：安装 GPT-SoVITS，导入有权使用的语音包。\n5. 点击“日常启动”，再测试 @机器人。" TextWrapping="Wrap" LineHeight="25" Margin="0,8,0,0" />
+                                        <TextBlock Text="0. 先开启硬件虚拟化并安装 / 验证 WSL 2。\n1. 安装并启动 Docker Desktop。\n2. 在 QQ 开放平台创建自己的官方机器人，并在 AstrBot 绑定。\n3. 在 AstrBot 配置自己的大模型 API。\n4. 可选：安装 GPT-SoVITS，导入有权使用的语音包。\n5. 点击“日常启动”，再测试 @机器人。" TextWrapping="Wrap" LineHeight="25" Margin="0,8,0,0" />
                                     </StackPanel>
                                 </Border>
                                 <Border Style="{StaticResource Card}">
@@ -163,13 +163,26 @@ $xaml = @'
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <StackPanel Margin="8">
                             <TextBlock Text="Docker Desktop 与 AstrBot" FontSize="22" FontWeight="SemiBold" Foreground="#17365D" />
-                            <TextBlock Text="Docker 是 AstrBot 的运行底座。安装完成后首次打开 Docker Desktop，等待左下角显示 Engine running，再回到这里。" TextWrapping="Wrap" Margin="0,9,0,14" FontSize="14" />
+                            <TextBlock Text="AstrBot 运行在 Docker Desktop 中。新电脑必须先准备好 CPU 虚拟化与 WSL 2，再安装 Docker Desktop；请按下方第 0 步完成。" TextWrapping="Wrap" Margin="0,9,0,14" FontSize="14" />
+                            <Border Style="{StaticResource Card}">
+                                <StackPanel>
+                                    <TextBlock Text="第 0 步：先完成 WSL 2 与硬件虚拟化" FontSize="17" FontWeight="SemiBold" />
+                                    <TextBlock Text="Docker Desktop 在本项目中使用 WSL 2 / Linux containers。若 Docker 显示“Virtualization support not detected”，这不是 Docker 账号问题；请先确认 CPU 虚拟化已开启并完成 WSL 2，再继续安装 Docker。" TextWrapping="Wrap" Margin="0,7,0,8" />
+                                    <TextBlock Text="① 按 Ctrl + Shift + Esc → 性能 → CPU，确认“虚拟化：已启用”。若已禁用，重启进入 BIOS / UEFI，开启 Intel VT-x / Intel Virtualization Technology 或 AMD SVM Mode / AMD-V。&#x0a;② 以管理员身份打开 PowerShell，执行 wsl --install，然后重启 Windows。重启后执行 wsl --update 和 wsl --status。&#x0a;③ 再启动 Docker Desktop，等待 Engine running。" TextWrapping="Wrap" LineHeight="22" Margin="0,0,0,8" />
+                                    <WrapPanel>
+                                        <Button x:Name="BtnInstallWsl" Style="{StaticResource PrimaryButton}" Content="以管理员身份安装 WSL 2" />
+                                        <Button x:Name="BtnWslGuide" Content="打开本地排错指南" />
+                                        <Button x:Name="BtnWslDocs" Content="微软官方 WSL 2 说明" />
+                                        <Button x:Name="BtnCopyWslCommand" Content="复制管理员命令" />
+                                    </WrapPanel>
+                                </StackPanel>
+                            </Border>
                             <Border Style="{StaticResource Card}">
                                 <StackPanel>
                                     <TextBlock Text="下载 Docker Desktop" FontSize="17" FontWeight="SemiBold" />
-                                    <TextBlock Text="推荐 Windows 的 WSL 2 / Linux containers 模式。安装过程若提示启用 WSL，请按 Docker 官方提示完成并重启。" TextWrapping="Wrap" Margin="0,7,0,8" />
+                                    <TextBlock Text="完成 WSL 2 后，再下载 Docker Desktop。若 Docker 显示“Virtualization support not detected”，请回到上方第 0 步排查；登录 Docker 账号不能修复虚拟化。" TextWrapping="Wrap" Margin="0,7,0,8" />
                                     <WrapPanel>
-                                        <Button x:Name="BtnDockerDocs" Style="{StaticResource PrimaryButton}" Content="打开官方安装说明" />
+                                        <Button x:Name="BtnDockerDocs" Style="{StaticResource PrimaryButton}" Content="打开 Docker 官方说明" />
                                         <Button x:Name="BtnDockerDirect" Content="官方下载 Docker Desktop" />
                                     </WrapPanel>
                                 </StackPanel>
@@ -393,7 +406,7 @@ $xaml = @'
                             <Border Style="{StaticResource Card}">
                                 <StackPanel>
                                     <TextBlock Text="给下载者的一句话说明" FontSize="17" FontWeight="SemiBold" />
-                                    <TextBlock Text="“先解压基础包，双击 Setup-Center.cmd，按页签完成 Docker、QQ、模型配置；需要时再导入文本人格包和语音包。所有账号、密钥与白名单都由你自己创建，不要把它们发给我。”" TextWrapping="Wrap" Margin="0,7,0,8" />
+                                    <TextBlock Text="“先完成 WSL 2 / 虚拟化前置，再解压基础包并双击 Setup-Center.cmd，按页签完成 Docker、QQ、模型配置；需要时再导入文本人格包和语音包。所有账号、密钥与白名单都由你自己创建，不要把它们发给我。”" TextWrapping="Wrap" Margin="0,7,0,8" />
                                     <Button x:Name="BtnCopyDownloadInstructions" Content="复制这段说明" HorizontalAlignment="Left" />
                                 </StackPanel>
                             </Border>
@@ -524,6 +537,28 @@ function Open-SetupFile {
     }
     catch {
         Show-SetupFailure -Title '无法打开说明' -Summary "无法打开本地说明：$Path" -ErrorObject $_
+    }
+}
+
+function Open-AdminWslInstall {
+    $command = @'
+Write-Host '正在启动 WSL 2 安装。完成后请重启 Windows。'
+wsl --install
+if ($LASTEXITCODE -eq 0) {
+    Write-Host 'WSL 安装命令已完成或已提交。请重启 Windows，然后回到配置中心执行 wsl --update / wsl --status。'
+}
+else {
+    Write-Host 'WSL 安装命令返回错误。请按任意键保留窗口，或打开本地 WSL 2 指南排查。'
+}
+'@
+
+    try {
+        $encodedCommand = [Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($command))
+        Start-Process -FilePath 'powershell.exe' -Verb RunAs -ArgumentList @('-NoExit', '-NoProfile', '-EncodedCommand', $encodedCommand)
+        Add-SetupLog '[INFO] 已请求以管理员身份打开 WSL 2 安装终端；请接受 UAC 提示，并在命令完成后重启 Windows。'
+    }
+    catch {
+        Show-SetupFailure -Title '无法启动 WSL 安装' -Summary '未能以管理员身份打开 WSL 安装终端。请使用“复制管理员命令”手动执行。' -ErrorObject $_
     }
 }
 
@@ -738,6 +773,10 @@ $window.FindName('BtnDailyStatus').Add_Click({ Invoke-SetupScript -Title '本机
 $window.FindName('BtnVpnStatus').Add_Click({ Invoke-SetupScript -Title '公网出口 IP 检测' -FilePath $statusScript -Arguments @('-CheckVpnEgress') })
 $window.FindName('BtnRunEgressCheck').Add_Click({ Invoke-SetupScript -Title '公网出口 IP 检测' -FilePath $statusScript -Arguments @('-CheckVpnEgress') })
 
+$window.FindName('BtnInstallWsl').Add_Click({ Open-AdminWslInstall })
+$window.FindName('BtnWslGuide').Add_Click({ Open-SetupFile (Join-Path $projectRoot 'docs\DOCKER_WSL2_GUIDE.md') })
+$window.FindName('BtnWslDocs').Add_Click({ Open-SetupUrl 'https://learn.microsoft.com/zh-cn/windows/wsl/install' })
+$window.FindName('BtnCopyWslCommand').Add_Click({ Copy-SetupText "wsl --install`r`n# 重启 Windows 后，以管理员身份再次执行：`r`nwsl --update`r`nwsl --status" })
 $window.FindName('BtnDockerDocs').Add_Click({ Open-SetupUrl 'https://docs.docker.com/desktop/setup/install/windows-install/' })
 $window.FindName('BtnDockerDirect').Add_Click({ Open-SetupUrl 'https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe' })
 $window.FindName('BtnOpenDashboardFromStart').Add_Click({ Open-SetupUrl 'http://localhost:6185' })
@@ -826,7 +865,7 @@ $window.FindName('BtnCopyQqChecklist').Add_Click({
     Copy-SetupText "QQ 官方机器人检查清单`r`n1. 我的机器人：创建并设置头像、昵称、简介。`r`n2. 开发设置：事件订阅选择 WebSocket。`r`n3. 保存 AppID / AppSecret，只在 AstrBot 的 QQ 官方机器人适配器内填写。`r`n4. 服务器 IP 白名单：填当前 VPN 或网络的公网出口 IPv4。`r`n5. 开发体验号设置：添加自己的测试 QQ。`r`n6. AstrBot：机器人 → 创建 QQ 官方机器人适配器 → 保存 → 在 QQ 中 @机器人测试。"
 })
 $window.FindName('BtnCopyDownloadInstructions').Add_Click({
-    Copy-SetupText "先解压基础包，双击 Setup-Center.cmd，按页签完成 Docker、QQ、模型配置；需要时再导入文本人格包和语音包。所有账号、密钥与白名单都由你自己创建，不要把它们发给我。"
+    Copy-SetupText "先完成 WSL 2 / 虚拟化前置，再解压基础包并双击 Setup-Center.cmd，按页签完成 Docker、QQ、模型配置；需要时再导入文本人格包和语音包。所有账号、密钥与白名单都由你自己创建，不要把它们发给我。"
 })
 
 $window.Dispatcher.add_UnhandledException({

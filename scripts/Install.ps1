@@ -17,7 +17,7 @@ if (-not (Test-Path -LiteralPath $runtimeConfig)) {
 }
 
 if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
-    throw 'Docker was not found. Install Docker Desktop, open it once, then try again.'
+    throw 'Docker was not found. First complete docs\DOCKER_WSL2_GUIDE.md (CPU virtualization + WSL 2), then install and open Docker Desktop before trying again.'
 }
 
 & $startScript -StartupDelaySeconds 0

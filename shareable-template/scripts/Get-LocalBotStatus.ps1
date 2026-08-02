@@ -80,6 +80,9 @@ if ($null -ne $dockerAvailable) {
     $dockerReady = Test-DockerEngine
 }
 Write-Check -Label 'Docker Engine' -Passed $dockerReady
+if (-not $dockerReady) {
+    Write-Host '[HINT] Docker is not ready. On a new PC, read docs\DOCKER_WSL2_GUIDE.md. If Docker Desktop says "Virtualization support not detected", enable CPU virtualization and install/update WSL 2; Docker sign-in will not fix it.'
+}
 
 $astrBotRunning = $false
 if ($dockerReady -and (Test-Path -LiteralPath $composePath)) {

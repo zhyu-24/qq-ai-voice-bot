@@ -13,6 +13,7 @@ $runtimeConfigPath = Join-Path $projectRoot 'config\local-runtime.psd1'
 $logsPath = Join-Path $projectRoot 'logs'
 $statePath = Join-Path $projectRoot 'state'
 $composePath = Join-Path $projectRoot 'compose.yml'
+$dockerGuidePath = Join-Path $projectRoot 'docs\DOCKER_WSL2_GUIDE.md'
 
 if (-not (Test-Path -LiteralPath $runtimeConfigPath)) {
     throw "Missing local runtime config: $runtimeConfigPath. Copy config\local-runtime.psd1.example to local-runtime.psd1 first."
@@ -227,20 +228,20 @@ if ($delay -gt 0) {
 }
 
 if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
-    throw 'Docker command was not found. Install Docker Desktop first.'
+    throw "Docker command was not found. First complete the WSL 2 / virtualization prerequisite, then install Docker Desktop. See: $dockerGuidePath"
 }
 
 if (-not (Test-DockerEngine)) {
     $dockerDesktop = Get-DockerDesktopExecutable
     if ($null -eq $dockerDesktop) {
-        throw 'Docker Engine is unavailable and Docker Desktop.exe could not be found. Start Docker Desktop manually.'
+        throw "Docker Engine is unavailable and Docker Desktop.exe could not be found. Install Docker Desktop after completing the WSL 2 / virtualization prerequisite. See: $dockerGuidePath"
     }
     Write-Host 'Starting Docker Desktop...'
     Start-Process -FilePath $dockerDesktop -WindowStyle Hidden
     $dockerTimeout = [int](Get-Setting -Name 'DockerReadyTimeoutSeconds' -DefaultValue 240)
     $dockerReady = Wait-Until -TimeoutSeconds $dockerTimeout -WaitingMessage 'Waiting for Docker Engine...' -Condition { Test-DockerEngine }
     if (-not $dockerReady) {
-        throw 'Docker Engine did not become ready in time.'
+        throw "Docker Engine did not become ready in time. If Docker Desktop displays the Virtualization support not detected message, enable CPU virtualization and install/update WSL 2. See: $dockerGuidePath"
     }
 }
 Write-Host '[OK] Docker Engine is ready.'

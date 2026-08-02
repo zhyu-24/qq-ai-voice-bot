@@ -19,12 +19,13 @@
 
 ## 下载者导入步骤
 
-1. 先安装并运行基础包，完成自己的 QQ 官方机器人和大模型配置。
-2. 安装兼容的本地 GPT-SoVITS，并在基础项目的 config\local-runtime.psd1 中填写 GsvRoot。
-3. 解压语音包 ZIP。
-4. 双击语音包中的 Install-VoicePack.cmd。
-5. 在弹出的窗口中选择基础机器人项目目录。
-6. 安装器会验证哈希、复制模型与参考音频、备份 data\cmd_config.json、只更新本地 TTS 提供商，然后启动 GPT-SoVITS 与 AstrBot。
+1. 新电脑先完成 [Windows Docker / WSL 2 前置指南](DOCKER_WSL2_GUIDE.md)，确认 Docker Engine 能运行。
+2. 先安装并运行基础包，完成自己的 QQ 官方机器人和大模型配置。
+3. 安装兼容的本地 GPT-SoVITS，并在基础项目的 config\local-runtime.psd1 中填写 GsvRoot。
+4. 解压语音包 ZIP。
+5. 双击语音包中的 Install-VoicePack.cmd。
+6. 在弹出的窗口中选择基础机器人项目目录。
+7. 安装器会验证哈希、复制模型与参考音频、备份 data\cmd_config.json、只更新本地 TTS 提供商，然后启动 GPT-SoVITS 与 AstrBot。
 
 安装后，下载者无需重新训练这个声音；但每次语音生成依然需要其本机 GPU 和 GPT-SoVITS 运行时。
 
