@@ -90,13 +90,15 @@ try {
     $malformedPath = Join-Path $fixtureRoot 'data/malformed.json'
     Write-Utf8Fixture -Path $malformedPath -Text ('{"api_key":"' + $secret + '", invalid')
     $safeError = ''
+    $malformedRejected = $false
     try {
         Read-StrictUtf8Json -Path $malformedPath -Label 'AstrBot configuration' | Out-Null
-        throw 'Malformed JSON was unexpectedly accepted.'
     }
     catch {
+        $malformedRejected = $true
         $safeError = [string]$_.Exception.Message
     }
+    Assert-True $malformedRejected 'Malformed JSON must be rejected'
     Assert-True (-not $safeError.Contains($secret)) 'Malformed JSON error must not leak simulated secret'
     Assert-True (-not $safeError.Contains('invalid')) 'Malformed JSON error must not include input fragments'
     Assert-True ([System.Linq.Enumerable]::SequenceEqual([byte[]]$beforeMalformed, [byte[]][System.IO.File]::ReadAllBytes($configPath))) 'Malformed JSON handling must not alter valid config'
@@ -104,13 +106,15 @@ try {
     $invalidUtf8Path = Join-Path $fixtureRoot 'data/invalid-utf8.json'
     [System.IO.File]::WriteAllBytes($invalidUtf8Path, [byte[]](0x7B, 0x22, 0x78, 0x22, 0x3A, 0x22, 0xC3, 0x28, 0x22, 0x7D))
     $utf8Error = ''
+    $invalidUtf8Rejected = $false
     try {
         Read-StrictUtf8Json -Path $invalidUtf8Path -Label 'AstrBot configuration' | Out-Null
-        throw 'Invalid UTF-8 was unexpectedly accepted.'
     }
     catch {
+        $invalidUtf8Rejected = $true
         $utf8Error = [string]$_.Exception.Message
     }
+    Assert-True $invalidUtf8Rejected 'Invalid UTF-8 must be rejected'
     Assert-True ($utf8Error.Contains('not valid UTF-8')) 'Invalid UTF-8 must be rejected with a fixed safe message'
 
     $beforeValidationFailure = [System.IO.File]::ReadAllBytes($configPath)
@@ -127,7 +131,29 @@ try {
     Assert-True ([System.Linq.Enumerable]::SequenceEqual([byte[]]$beforeValidationFailure, [byte[]][System.IO.File]::ReadAllBytes($configPath))) 'Validation failure must leave original file byte-for-byte unchanged'
     Assert-True (-not @(Get-ChildItem -LiteralPath (Split-Path -Parent $configPath) -Filter '*.tmp' -Force).Count) 'Validation failure must not leave temp files'
 
-    if ($IsWindows) {
+    $beforePostCommitFailure = [System.IO.File]::ReadAllBytes($configPath)
+    $postCommitCandidate = Read-StrictUtf8Json -Path $configPath -Label 'AstrBot configuration'
+    $postCommitCandidate.provider_settings.default_personality = 'must-roll-back'
+    $validateRollbackCandidate = {
+        param($candidateValue)
+        if ([string]$candidateValue.provider_settings.default_personality -ne 'must-roll-back') {
+            throw 'Rollback candidate validation failed.'
+        }
+    }
+    $failAfterCommit = { param($installedValue) throw 'Simulated post-commit verification failure.' }
+    try {
+        Write-AtomicUtf8Json -Path $configPath -Value $postCommitCandidate -BackupDirectory $backupRoot -BackupPrefix 'cmd_config.before-post-commit' -Validate $validateRollbackCandidate -AfterCommit $failAfterCommit -Label 'AstrBot configuration' -Depth 30 | Out-Null
+        throw 'Post-commit failure was unexpectedly accepted.'
+    }
+    catch {
+        Assert-True (([string]$_.Exception.Message).Contains('original file was preserved')) 'Post-commit failure must report successful rollback'
+        Assert-True (-not ([string]$_.Exception.Message).Contains($secret)) 'Rollback failure message must not leak simulated secret'
+    }
+    Assert-True ([System.Linq.Enumerable]::SequenceEqual([byte[]]$beforePostCommitFailure, [byte[]][System.IO.File]::ReadAllBytes($configPath))) 'Post-commit verification failure must roll back to the original bytes'
+    Assert-True (-not @(Get-ChildItem -LiteralPath (Split-Path -Parent $configPath) -Filter '*.restore' -Force).Count) 'Rollback must not leave restore files'
+
+    $isWindowsPlatform = [Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT
+    if ($isWindowsPlatform) {
         $beforeLockedFailure = [System.IO.File]::ReadAllBytes($configPath)
         $lockedCandidate = Read-StrictUtf8Json -Path $configPath -Label 'AstrBot configuration'
         $lockedCandidate.provider_settings.default_personality = 'blocked-by-lock'
@@ -181,7 +207,7 @@ try {
 
     $rootVoice = [System.IO.File]::ReadAllText((Join-Path $repoRoot 'scripts/Install-VoicePack.ps1'), $utf8)
     Assert-True ($rootVoice.Contains('Repeated import was safely refused.')) 'Voice installer must safely refuse repeated imports'
-    Assert-True ($rootVoice.Contains('$createdAssetPaths')) 'Voice installer must track newly created assets for cleanup'
+    Assert-True ($rootVoice.Contains('$expectedNewAssetPaths')) 'Voice installer must track every expected new asset for cleanup, including partial copies'
 
     Write-Host '[PASS] cmd_config.json safety regression tests passed in an isolated fake-credential fixture.'
 }

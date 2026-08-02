@@ -173,6 +173,36 @@ try {
     $backups = @(Get-ChildItem -LiteralPath (Join-Path $botRoot 'backups') -Filter '*.json' -File)
     Assert-True ($backups.Count -ge 2) 'Successful voice and persona updates must each create backups'
 
+    $cleanupBotRoot = Join-Path $fixtureRoot 'fake-bot-cleanup'
+    Copy-Item -LiteralPath $botRoot -Destination $cleanupBotRoot -Recurse
+    $cleanupConfigPath = Join-Path $cleanupBotRoot 'data/cmd_config.json'
+    $cleanupConfigBefore = [System.IO.File]::ReadAllBytes($cleanupConfigPath)
+    $cleanupBackupsPath = Join-Path $cleanupBotRoot 'backups'
+    if (Test-Path -LiteralPath $cleanupBackupsPath) { Remove-Item -LiteralPath $cleanupBackupsPath -Recurse -Force }
+    Write-Utf8 -Path $cleanupBackupsPath -Text "This file intentionally blocks creation of the backups directory.`n"
+    foreach ($cleanupPath in @(
+        (Join-Path $fakeGsv 'GPT_weights_v2ProPlus/isolated-test-voice-fake.ckpt'),
+        (Join-Path $fakeGsv 'SoVITS_weights_v2ProPlus/isolated-test-voice-fake.pth'),
+        (Join-Path $fakeGsv 'reference_audio/isolated-test-voice/fake.wav')
+    )) {
+        if (Test-Path -LiteralPath $cleanupPath) { Remove-Item -LiteralPath $cleanupPath -Force }
+    }
+    $cleanupOutput = ''
+    $cleanupFailed = $false
+    try {
+        & (Join-Path $cleanupBotRoot 'scripts/Install-VoicePack.ps1') -BotProjectPath $cleanupBotRoot -PackRoot $packRoot -NoStart *>&1 | ForEach-Object { $cleanupOutput += [string]$_ + "`n" }
+    }
+    catch {
+        $cleanupFailed = $true
+        $cleanupOutput += [string]$_.Exception.Message
+    }
+    Assert-True $cleanupFailed 'Voice import must fail when the atomic backup location cannot be created'
+    Assert-True (-not $cleanupOutput.Contains($secret)) 'Voice import failure must not leak simulated secret'
+    Assert-True ([System.Linq.Enumerable]::SequenceEqual([byte[]]$cleanupConfigBefore, [byte[]][System.IO.File]::ReadAllBytes($cleanupConfigPath))) 'Voice import failure must leave config byte-for-byte unchanged'
+    Assert-True (-not (Test-Path -LiteralPath (Join-Path $fakeGsv 'GPT_weights_v2ProPlus/isolated-test-voice-fake.ckpt'))) 'Failed voice import must not leave GPT asset'
+    Assert-True (-not (Test-Path -LiteralPath (Join-Path $fakeGsv 'SoVITS_weights_v2ProPlus/isolated-test-voice-fake.pth'))) 'Failed voice import must not leave SoVITS asset'
+    Assert-True (-not (Test-Path -LiteralPath (Join-Path $fakeGsv 'reference_audio/isolated-test-voice/fake.wav'))) 'Failed voice import must not leave reference audio'
+
     Write-Host '[PASS] Isolated fake voice/persona import regression tests passed; no real bot, credentials, weights, or audio were used.'
 }
 finally {

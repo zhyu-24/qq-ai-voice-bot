@@ -98,7 +98,8 @@ function Write-AtomicUtf8Json {
         [Parameter(Mandatory = $true)][string]$BackupPrefix,
         [scriptblock]$Validate,
         [string]$Label = 'JSON file',
-        [int]$Depth = 50
+        [int]$Depth = 50,
+        [scriptblock]$AfterCommit
     )
 
     $fullPath = [System.IO.Path]::GetFullPath($Path)
@@ -117,6 +118,7 @@ function Write-AtomicUtf8Json {
     $tempPath = Join-Path $targetDirectory ('.' + [System.IO.Path]::GetFileName($fullPath) + '.' + $uniqueId + '.tmp')
     $backupPath = Join-Path $BackupDirectory ($BackupPrefix + '-' + (Get-Date -Format 'yyyyMMdd-HHmmss-fff') + '-' + $uniqueId.Substring(0, 8) + '.json')
     $restorePath = $null
+    $discardPath = $null
     $committed = $false
     $rollbackSucceeded = $true
 
@@ -142,6 +144,9 @@ function Write-AtomicUtf8Json {
         if ($null -ne $Validate) {
             & $Validate $installedValue
         }
+        if ($null -ne $AfterCommit) {
+            & $AfterCommit $installedValue
+        }
 
         return $backupPath
     }
@@ -150,8 +155,12 @@ function Write-AtomicUtf8Json {
             try {
                 $restorePath = Join-Path $targetDirectory ('.' + [System.IO.Path]::GetFileName($fullPath) + '.' + [Guid]::NewGuid().ToString('N') + '.restore')
                 [System.IO.File]::Copy($backupPath, $restorePath, $false)
-                [System.IO.File]::Replace($restorePath, $fullPath, $null, $true)
+                $discardPath = Join-Path $targetDirectory ('.' + [System.IO.Path]::GetFileName($fullPath) + '.' + [Guid]::NewGuid().ToString('N') + '.discard')
+                [System.IO.File]::Replace($restorePath, $fullPath, $discardPath, $true)
                 $restorePath = $null
+                if (Test-Path -LiteralPath $discardPath) {
+                    Remove-Item -LiteralPath $discardPath -Force -ErrorAction SilentlyContinue
+                }
             }
             catch {
                 $rollbackSucceeded = $false
@@ -163,7 +172,7 @@ function Write-AtomicUtf8Json {
         throw "Could not safely update $Label. The original file was preserved."
     }
     finally {
-        foreach ($cleanupPath in @($tempPath, $restorePath)) {
+        foreach ($cleanupPath in @($tempPath, $restorePath, $discardPath)) {
             if (-not [string]::IsNullOrWhiteSpace([string]$cleanupPath) -and (Test-Path -LiteralPath $cleanupPath)) {
                 Remove-Item -LiteralPath $cleanupPath -Force -ErrorAction SilentlyContinue
             }

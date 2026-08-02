@@ -197,22 +197,19 @@ $validateVoiceConfig = {
     }
 }
 
-$createdAssetPaths = New-Object System.Collections.Generic.List[string]
+$expectedNewAssetPaths = @($gptTarget, $sovitsTarget, $referenceTarget)
 $backupDirectory = Join-Path $botRoot 'backups'
 try {
     Copy-Item -LiteralPath (Get-SafeChildPath -Root $packRoot -RelativePath ([string]$gptEntry.relative_path)) -Destination $gptTarget
-    $createdAssetPaths.Add($gptTarget)
     Copy-Item -LiteralPath (Get-SafeChildPath -Root $packRoot -RelativePath ([string]$sovitsEntry.relative_path)) -Destination $sovitsTarget
-    $createdAssetPaths.Add($sovitsTarget)
     Copy-Item -LiteralPath (Get-SafeChildPath -Root $packRoot -RelativePath ([string]$referenceEntry.relative_path)) -Destination $referenceTarget
-    $createdAssetPaths.Add($referenceTarget)
 
     $backupPath = Write-AtomicUtf8Json -Path $astrConfigPath -Value $astrConfig -BackupDirectory $backupDirectory -BackupPrefix 'cmd_config.before-voice-pack' -Validate $validateVoiceConfig -Label 'AstrBot configuration' -Depth 30
 }
 catch {
-    foreach ($createdAssetPath in $createdAssetPaths) {
-        if (Test-Path -LiteralPath $createdAssetPath -PathType Leaf) {
-            Remove-Item -LiteralPath $createdAssetPath -Force -ErrorAction SilentlyContinue
+    foreach ($expectedNewAssetPath in $expectedNewAssetPaths) {
+        if (Test-Path -LiteralPath $expectedNewAssetPath -PathType Leaf) {
+            Remove-Item -LiteralPath $expectedNewAssetPath -Force -ErrorAction SilentlyContinue
         }
     }
     if ((Test-Path -LiteralPath $referenceTargetDirectory -PathType Container) -and -not (Get-ChildItem -LiteralPath $referenceTargetDirectory -Force | Select-Object -First 1)) {
